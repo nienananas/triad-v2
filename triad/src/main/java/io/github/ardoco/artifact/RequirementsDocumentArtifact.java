@@ -2,8 +2,8 @@ package io.github.ardoco.artifact;
 
 public class RequirementsDocumentArtifact extends Artifact {
 
-    public RequirementsDocumentArtifact(String textBody) {
-        super(textBody);
+    public RequirementsDocumentArtifact(String identifier, String textBody) {
+        super(identifier, textBody);
     }
 
     @Override

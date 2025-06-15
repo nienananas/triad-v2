@@ -11,7 +11,9 @@ import java.util.*;
 
 public abstract class Artifact {
 
+    protected String identifier;
     protected String textBody;
+    protected Set<Biterm> biterms;
     protected static StanfordCoreNLP pipeline;
 
     static {
@@ -21,7 +23,8 @@ public abstract class Artifact {
         pipeline = new StanfordCoreNLP(props);
     }
 
-    protected Artifact(String textBody) {
+    protected Artifact(String identifier, String textBody) {
+        this.identifier = identifier;
         this.textBody = textBody;
     }
 
@@ -34,29 +37,17 @@ public abstract class Artifact {
      * @return A set of biterms, where each biterm is represented as the two words, separated by a space.
      */
     public Set<Biterm> getBiterms() {
-        Annotation document = new Annotation(textBody);
-        pipeline.annotate(document);
-
-        Set<Biterm> biterms = new HashSet<>();
-        
-        for (CoreMap sentence : document.get(CoreAnnotations.SentencesAnnotation.class)) {
-            SemanticGraph dependencies = sentence.get(BasicDependenciesAnnotation.class);
-            
-            for (SemanticGraphEdge edge : dependencies.edgeListSorted()) {
-                IndexedWord governor = edge.getGovernor();
-                IndexedWord dependent = edge.getDependent();
-                
-                // Skip anything that is not a verb, noun, or adjective
-                if (isValidWord(governor) && isValidWord(dependent)) {
-                    Biterm biterm = new Biterm(governor, dependent, edge.getRelation());
-                    biterms.add(biterm);
-                }
-            }
+        if (this.biterms != null) {
+            return this.biterms;
         }
-        
-        return biterms;
+
+        this.biterms = getBitermsFromText(textBody);
+        return this.biterms;
     }
 
+    public String getIdentifier() {
+        return identifier;
+    }
 
     public void extendBiterms(Set<String> consensualBiterms) {
         System.out.println("Artifact.extendBiterms() called for: " + this.getClass().getSimpleName() + " with consensual biterms: " + consensualBiterms);
@@ -72,11 +63,32 @@ public abstract class Artifact {
     }
 
 
-    private boolean isValidWord(IndexedWord word) {
+    protected boolean isValidWord(IndexedWord word) {
         //String pos = word.tag();
         // Check if the POS tag indicates a verb, noun, or adjective
         return isVerb(word.tag()) || isNoun(word.tag()) || isAdjective(word.tag());
 
+    }
+
+    protected Set<Biterm> getBitermsFromText(String text) {
+        Annotation document = new Annotation(text);
+        pipeline.annotate(document);
+
+        Set<Biterm> biterms = new HashSet<>();
+
+        for (CoreMap sentence : document.get(CoreAnnotations.SentencesAnnotation.class)) {
+            SemanticGraph dependencies = sentence.get(BasicDependenciesAnnotation.class);
+            
+            for (SemanticGraphEdge edge : dependencies.edgeListSorted()) {
+                IndexedWord governor = edge.getGovernor();
+                IndexedWord dependent = edge.getDependent();
+                
+                if (isValidWord(governor) && isValidWord(dependent)) {
+                    biterms.add(new Biterm(governor, dependent, edge.getRelation()));
+                }
+            }
+        }
+        return biterms;
     }
 
     private boolean isVerb(String pos) {

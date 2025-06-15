@@ -37,6 +37,17 @@
       <version>${stanford.corenlp.version}</version>
       <classifier>models</classifier>
     </dependency>
+
+    <dependency>
+      <groupId>io.github.bonede</groupId>
+      <artifactId>tree-sitter</artifactId>
+      <version>0.22.6a</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.bonede</groupId>
+      <artifactId>tree-sitter-java</artifactId>
+      <version>0.21.0a</version>
+    </dependency>
     
   </dependencies>
 

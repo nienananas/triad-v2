@@ -2,6 +2,7 @@ package io.github.ardoco.Biterm;
 
 import edu.stanford.nlp.ling.*;
 import edu.stanford.nlp.trees.GrammaticalRelation;
+import io.github.ardoco.StanfordLemmatizer;
 
 public class Biterm {
     private IndexedWord firstTerm;
@@ -28,6 +29,14 @@ public class Biterm {
         return relation != null;
     }
 
+    public IndexedWord getFirstWord() {
+        return firstTerm;
+    }
+
+    public IndexedWord getSecondWord() {
+        return secondTerm;
+    }
+
     public String getFirstTerm() {
         return firstTermString;
     }
@@ -40,11 +49,26 @@ public class Biterm {
         return relation;
     }
 
+    public boolean isConsensual(Biterm other) {
+        return StanfordLemmatizer.lemmatize(this.firstTermString).equals(StanfordLemmatizer.lemmatize(other.firstTermString)) && StanfordLemmatizer.lemmatize(this.secondTermString).equals(StanfordLemmatizer.lemmatize(other.secondTermString))
+                || StanfordLemmatizer.lemmatize(this.firstTermString).equals(StanfordLemmatizer.lemmatize(other.secondTermString)) && StanfordLemmatizer.lemmatize(this.secondTermString).equals(StanfordLemmatizer.lemmatize(other.firstTermString));
+    }
+
     @Override
     public String toString() {
         if (!hasRelation()) {
             return firstTermString.toLowerCase() + " " + secondTermString.toLowerCase();
         }
         return firstTermString.toLowerCase() + " " + secondTermString.toLowerCase() + ":" + relation.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Biterm) {
+            Biterm other = (Biterm) obj;
+            return this.firstTermString.equals(other.firstTermString) && this.secondTermString.equals(other.secondTermString) 
+                || this.firstTermString.equals(other.secondTermString) && this.secondTermString.equals(other.firstTermString);
+        }
+        return false;
     }
 }
