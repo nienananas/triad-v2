@@ -82,36 +82,34 @@
           <artifactId>spotless-maven-plugin</artifactId>
           <version>${spotless.version}</version>
           <configuration>
-            <formats>
-              <format>
-                <includes>
-                  <include>*.md</include>
-                  <include>.gitignore</include>
-                </includes>
-                <trimTrailingWhitespace />
-                <endWithNewline />
-                <indent>
-                  <tabs>true</tabs>
-                  <spacesPerTab>4</spacesPerTab>
-                </indent>
-              </format>
-            </formats>
-            <!-- define a language-specific format -->
             <java>
-              <eclipse>
-                <!--suppress UnresolvedMavenProperty -->
-                <file>${maven.multiModuleProjectDirectory}/formatter.xml</file>
-              </eclipse>
-              <removeUnusedImports />
-              <licenseHeader>
-                <!--suppress UnresolvedMavenProperty -->
-                <file>${maven.multiModuleProjectDirectory}/license-header</file>
-              </licenseHeader>
+              <toggleOffOn>
+                <off>@formatter:off</off>
+                <on>@formatter:on</on>
+              </toggleOffOn>
+              <palantirJavaFormat>
+                <version>2.58.0</version>
+                <style>PALANTIR</style>
+                <formatJavadoc>false</formatJavadoc>
+              </palantirJavaFormat>
               <importOrder>
-                <!--suppress UnresolvedMavenProperty -->
                 <file>${maven.multiModuleProjectDirectory}/spotless.importorder</file>
               </importOrder>
+              <licenseHeader>
+                <!--suppress UnresolvedMavenProperty -->
+                <file>${maven.multiModuleProjectDirectory}/header.txt</file>
+              </licenseHeader>
+              <removeUnusedImports />
             </java>
+            <markdown>
+              <includes>
+                <include>README.md</include>
+                <include>docs/**/*.md</include>
+              </includes>
+              <flexmark>
+                <version>0.64.8</version>
+              </flexmark>
+            </markdown>
             <pom>
               <sortPom>
                 <encoding>UTF-8</encoding>
@@ -132,6 +130,15 @@
             </pom>
             <ratchetFrom>origin/main</ratchetFrom>
           </configuration>
+          <executions>
+            <execution>
+              <id>spotless:check</id>
+              <goals>
+                <goal>check</goal>
+              </goals>
+              <phase>verify</phase>
+            </execution>
+          </executions>
         </plugin>
 
         <plugin>
