@@ -11,7 +11,6 @@
   <version>${revision}</version>
   <packaging>jar</packaging>
 
-  
   <properties>
     <revision>2.0.0-SNAPSHOT</revision>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -20,17 +19,6 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
 
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
@@ -54,7 +42,18 @@
       <artifactId>tree-sitter-java</artifactId>
       <version>0.21.0a</version>
     </dependency>
-    
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+
   </dependencies>
 
   <repositories>
@@ -77,70 +76,6 @@
   <build>
     <pluginManagement>
       <plugins>
-        <plugin>
-          <groupId>com.diffplug.spotless</groupId>
-          <artifactId>spotless-maven-plugin</artifactId>
-          <version>${spotless.version}</version>
-          <configuration>
-            <java>
-              <toggleOffOn>
-                <off>@formatter:off</off>
-                <on>@formatter:on</on>
-              </toggleOffOn>
-              <palantirJavaFormat>
-                <version>2.58.0</version>
-                <style>PALANTIR</style>
-                <formatJavadoc>false</formatJavadoc>
-              </palantirJavaFormat>
-              <importOrder>
-                <file>${maven.multiModuleProjectDirectory}/spotless.importorder</file>
-              </importOrder>
-              <licenseHeader>
-                <!--suppress UnresolvedMavenProperty -->
-                <file>${maven.multiModuleProjectDirectory}/header.txt</file>
-              </licenseHeader>
-              <removeUnusedImports />
-            </java>
-            <markdown>
-              <includes>
-                <include>README.md</include>
-                <include>docs/**/*.md</include>
-              </includes>
-              <flexmark>
-                <version>0.64.8</version>
-              </flexmark>
-            </markdown>
-            <pom>
-              <sortPom>
-                <encoding>UTF-8</encoding>
-                <keepBlankLines>true</keepBlankLines>
-                <indentBlankLines>false</indentBlankLines>
-                <nrOfIndentSpace>2</nrOfIndentSpace>
-                <expandEmptyElements>false</expandEmptyElements>
-                <spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
-                <sortDependencies>groupId,artifactId</sortDependencies>
-                <sortDependencyExclusions>groupId,artifactId</sortDependencyExclusions>
-                <sortDependencyManagement>groupId,artifactId</sortDependencyManagement>
-                <sortPlugins>groupId,artifactId</sortPlugins>
-                <sortProperties>false</sortProperties>
-                <sortModules>true</sortModules>
-                <sortExecutions>true</sortExecutions>
-                <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
-              </sortPom>
-            </pom>
-            <ratchetFrom>origin/main</ratchetFrom>
-          </configuration>
-          <executions>
-            <execution>
-              <id>spotless:check</id>
-              <goals>
-                <goal>check</goal>
-              </goals>
-              <phase>verify</phase>
-            </execution>
-          </executions>
-        </plugin>
-
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-assembly-plugin</artifactId>
@@ -176,6 +111,64 @@
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
         <version>${spotless.version}</version>
+        <configuration combine.self="override">
+          <java>
+            <toggleOffOn>
+              <off>@formatter:off</off>
+              <on>@formatter:on</on>
+            </toggleOffOn>
+            <palantirJavaFormat>
+              <version>2.58.0</version>
+              <style>PALANTIR</style>
+              <formatJavadoc>false</formatJavadoc>
+            </palantirJavaFormat>
+            <importOrder>
+              <file>${maven.multiModuleProjectDirectory}/spotless.importorder</file>
+            </importOrder>
+            <licenseHeader>
+              <!--suppress UnresolvedMavenProperty -->
+              <file>${maven.multiModuleProjectDirectory}/header.txt</file>
+            </licenseHeader>
+            <removeUnusedImports />
+          </java>
+          <markdown>
+            <includes>
+              <include>README.md</include>
+              <include>docs/**/*.md</include>
+            </includes>
+            <flexmark>
+              <version>0.64.8</version>
+            </flexmark>
+          </markdown>
+          <pom>
+            <sortPom>
+              <encoding>UTF-8</encoding>
+              <keepBlankLines>true</keepBlankLines>
+              <indentBlankLines>false</indentBlankLines>
+              <nrOfIndentSpace>2</nrOfIndentSpace>
+              <expandEmptyElements>false</expandEmptyElements>
+              <spaceBeforeCloseEmptyElement>true</spaceBeforeCloseEmptyElement>
+              <sortDependencies>groupId,artifactId</sortDependencies>
+              <sortDependencyExclusions>groupId,artifactId</sortDependencyExclusions>
+              <sortDependencyManagement>groupId,artifactId</sortDependencyManagement>
+              <sortPlugins>groupId,artifactId</sortPlugins>
+              <sortProperties>false</sortProperties>
+              <sortModules>true</sortModules>
+              <sortExecutions>true</sortExecutions>
+              <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
+            </sortPom>
+          </pom>
+          <ratchetFrom>origin/main</ratchetFrom>
+        </configuration>
+        <executions>
+          <execution>
+            <id>spotless:check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
