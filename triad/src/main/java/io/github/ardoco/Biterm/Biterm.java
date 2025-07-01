@@ -10,6 +10,7 @@ public class Biterm {
     private IndexedWord secondTerm;
     private String secondTermString;
     private GrammaticalRelation relation = null;
+    private int weight = 1;
 
     public Biterm(IndexedWord first, IndexedWord second, GrammaticalRelation relation) {
         this.firstTerm = first;
@@ -70,5 +71,13 @@ public class Biterm {
                 || this.firstTermString.equals(other.secondTermString) && this.secondTermString.equals(other.firstTermString);
         }
         return false;
+    }
+
+    public int getWeight() {
+        return weight;
+    }
+
+    public void setWeight(int weight) {
+        this.weight = weight;
     }
 }

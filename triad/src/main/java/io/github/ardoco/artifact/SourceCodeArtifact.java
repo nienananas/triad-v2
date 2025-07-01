@@ -3,6 +3,7 @@ package io.github.ardoco.artifact;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.nio.file.Paths;
 
 import org.treesitter.TSLanguage;
 import org.treesitter.TSNode;
@@ -18,7 +19,12 @@ import edu.stanford.nlp.util.*;
 
 import io.github.ardoco.Biterm.Biterm;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SourceCodeArtifact extends Artifact {
+
+    private static final Logger logger = LoggerFactory.getLogger(SourceCodeArtifact.class);
 
     private static final TSParser parser = new TSParser();
     private static final TSLanguage javaLanguage = new TreeSitterJava();
@@ -33,8 +39,7 @@ public class SourceCodeArtifact extends Artifact {
 
     @Override
     protected void preProcessing() {
-        System.out.println("Preprocessing Code Artifact");
-
+        logger.info("Preprocessing Code Artifact");
     }
 
     @Override
@@ -56,7 +61,7 @@ public class SourceCodeArtifact extends Artifact {
     }
     private void extractElementsRecursive(TSNode node, Set<Biterm> elements, String sourceCode) {
         String nodeType = node.getType();
-        // System.out.println("Visiting node: " + nodeType + " -> " + getNodeText(node, sourceCode)); // Debug
+        // logger.debug("Visiting node: {} -> {}", nodeType, getNodeText(node, sourceCode)); // Debug
 
         switch (nodeType) {
             case "class_declaration":
@@ -64,14 +69,14 @@ public class SourceCodeArtifact extends Artifact {
             case "enum_declaration":
                 TSNode classNameNode = findChildNodeByType(node, "identifier");
                 if (classNameNode != null) {
-                    elements.addAll(getBitermsFromIdentifier(getNodeText(classNameNode, sourceCode)));
+                    elements.addAll(getBitermsFromIdentifier(getNodeText(classNameNode, sourceCode), 2));
                 }
                 break;
 
             case "method_declaration":
                 TSNode methodNameNode = findChildNodeByType(node, "identifier");
                 if (methodNameNode != null) {
-                    elements.addAll(getBitermsFromIdentifier(getNodeText(methodNameNode, sourceCode)));
+                    elements.addAll(getBitermsFromIdentifier(getNodeText(methodNameNode, sourceCode), 2));
                 }
                 TSNode parametersNode = findChildNodeByType(node, "formal_parameters");
                 if (parametersNode != null) {
@@ -87,7 +92,7 @@ public class SourceCodeArtifact extends Artifact {
                 // Method invocations can be complex: simpleIdentifier, fieldAccess.method, etc.
                 TSNode methodInvocationNameNode = getMethodInvocationNameNode(node);
                 if (methodInvocationNameNode != null) {
-                    elements.addAll(getBitermsFromIdentifier(getNodeText(methodInvocationNameNode, sourceCode)));
+                    elements.addAll(getBitermsFromIdentifier(getNodeText(methodInvocationNameNode, sourceCode), 1));
                 }
                 break;
 
@@ -158,8 +163,8 @@ public class SourceCodeArtifact extends Artifact {
                 if (paramNameNode != null && paramTypeNode != null) {
                     String paramName = getNodeText(paramNameNode, sourceCode);
                     String paramType = getNodeText(paramTypeNode, sourceCode);
-                    elements.addAll(getBitermsFromIdentifier(paramName));
-                    elements.addAll(getBitermsFromIdentifier(paramType));
+                    elements.addAll(getBitermsFromIdentifier(paramName, 1));
+                    elements.addAll(getBitermsFromIdentifier(paramType, 1));
                 }
             }
         }
@@ -206,7 +211,7 @@ public class SourceCodeArtifact extends Artifact {
 
         if (typeNode != null) {
             String fieldType = getNodeText(typeNode, sourceCode);
-            elements.addAll(getBitermsFromIdentifier(fieldType));
+            elements.addAll(getBitermsFromIdentifier(fieldType, 1));
 
             if (nameNodes.isEmpty()) {
                  TSNode directNameNode = findChildNodeByTypeRecursive(fieldDeclarationNode, "identifier");
@@ -217,8 +222,8 @@ public class SourceCodeArtifact extends Artifact {
             
             for (TSNode nameNode : nameNodes) {
                 String fieldName = getNodeText(nameNode, sourceCode);
-                elements.addAll(getBitermsFromIdentifier(fieldName));
-                elements.addAll(getBitermsFromIdentifier(fieldType));
+                elements.addAll(getBitermsFromIdentifier(fieldName, 1));
+                elements.addAll(getBitermsFromIdentifier(fieldType, 1));
             }
         }
     }
@@ -296,7 +301,7 @@ public class SourceCodeArtifact extends Artifact {
         return null;
     }
 
-    private Set<Biterm> getBitermsFromIdentifier(String identifier) {
+    private Set<Biterm> getBitermsFromIdentifier(String identifier, int weight) {
         Set<Biterm> biterms = new HashSet<>();
         int lastWordIndex = 0;
         List<String> terms = new LinkedList<>();
@@ -314,7 +319,9 @@ public class SourceCodeArtifact extends Artifact {
 
         for (int i = 0; i < terms.size() - 1; i++) {
             for (int j = i + 1; j < terms.size(); j++) {
-                biterms.add(new Biterm(terms.get(i), terms.get(j)));
+                Biterm b = new Biterm(terms.get(i), terms.get(j));
+                b.setWeight(weight);
+                biterms.add(b);
             }
         }
         return biterms;

@@ -24,7 +24,7 @@ public class LogCleaner {
 		try {
 
 			LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-			System.out.println("Using logger config:" + ctx.getConfiguration().getConfigurationSource().getLocation());
+			LOGGER.info("Using logger config:{}", ctx.getConfiguration().getConfigurationSource().getLocation());
 
 			Map<String, Appender> appenders = ctx.getRootLogger().getAppenders();
 			for (Appender app : appenders.values()) {

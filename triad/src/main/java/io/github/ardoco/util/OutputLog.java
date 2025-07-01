@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.github.ardoco.Biterm.Biterm;
+import io.github.ardoco.model.SimilarityMatrix;
 
 public class OutputLog {
 
@@ -15,6 +16,12 @@ public class OutputLog {
         String content = biterms.stream()
                                 .map(Biterm::toString)
                                 .collect(Collectors.joining(System.lineSeparator()));
+
+        Files.writeString(Paths.get(path), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    public static void writeSimilarityMatrixToFile(String path, SimilarityMatrix similarityMatrix) throws IOException {
+        String content = similarityMatrix.toString();
 
         Files.writeString(Paths.get(path), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }

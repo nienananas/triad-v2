@@ -3,11 +3,18 @@ package io.github.ardoco.artifact;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DesignDocumentArtifact extends Artifact {
 
-    public DesignDocumentArtifact(String textBody) {
-        super(textBody);
+    private static final Logger logger = LoggerFactory.getLogger(DesignDocumentArtifact.class);
+
+    private String content;
+
+    public DesignDocumentArtifact(String content) {
+        super(null, content);
+        logger.info("Preprocessing Design Document Artifact");
     }
 
     @Override

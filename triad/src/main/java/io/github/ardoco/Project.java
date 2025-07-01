@@ -8,10 +8,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.ardoco.artifact.RequirementsDocumentArtifact;
 import io.github.ardoco.artifact.SourceCodeArtifact;
 
 public class Project {
+    private static final Logger logger = LoggerFactory.getLogger(Project.class);
     private final String projectName;
     private final Path codePath;
     private final Path reqsPath;
@@ -32,7 +36,7 @@ public class Project {
                             String name = path.getFileName().toString().replace(".java", "");
                             return new SourceCodeArtifact(name, content);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.error("Error reading file: " + path, e);
                             return null;
                         }
                     })
@@ -51,7 +55,7 @@ public class Project {
                             String identifier = path.getFileName().toString().replace(".txt", "");
                             return new RequirementsDocumentArtifact(identifier, content);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.error("Error reading file: " + path, e);
                             return null;
                         }
                     })

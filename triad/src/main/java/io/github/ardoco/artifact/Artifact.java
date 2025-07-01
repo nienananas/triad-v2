@@ -6,17 +6,25 @@ import edu.stanford.nlp.semgraph.*;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.*;
 import edu.stanford.nlp.util.*;
 import io.github.ardoco.Biterm.Biterm;
+import io.github.ardoco.Biterm.ConsensualBiterm;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class Artifact {
 
+    private static final Logger logger = LoggerFactory.getLogger(Artifact.class);
     protected String identifier;
     protected String textBody;
     protected Set<Biterm> biterms;
+    protected Set<ConsensualBiterm> consensualBiterms = new HashSet<>();
     protected static StanfordCoreNLP pipeline;
+    protected Set<ConsensualBiterm> extendedBiterms;
 
-    static {
+    static { //TODO: static weg, stattdessen statische Methode loadPipeline() 
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize,ssplit,pos,lemma,depparse");
         props.setProperty("coref.algorithm", "neural");
@@ -50,7 +58,7 @@ public abstract class Artifact {
     }
 
     public void extendBiterms(Set<String> consensualBiterms) {
-        System.out.println("Artifact.extendBiterms() called for: " + this.getClass().getSimpleName() + " with consensual biterms: " + consensualBiterms);
+        logger.info("Artifact.extendBiterms() called for: {} with consensual biterms: {}", this.getClass().getSimpleName(), consensualBiterms);
         // TODO: expand via added weight to IR method?
     }
 
@@ -71,10 +79,14 @@ public abstract class Artifact {
     }
 
     protected Set<Biterm> getBitermsFromText(String text) {
+        if (this.biterms != null) {
+            return this.biterms;
+        }
+
         Annotation document = new Annotation(text);
         pipeline.annotate(document);
 
-        Set<Biterm> biterms = new HashSet<>();
+        Set<Biterm> biterms = new LinkedHashSet<>(); //TODO: Überall LinkedHashSet verwenden, für reihenfolge
 
         for (CoreMap sentence : document.get(CoreAnnotations.SentencesAnnotation.class)) {
             SemanticGraph dependencies = sentence.get(BasicDependenciesAnnotation.class);
@@ -102,4 +114,24 @@ public abstract class Artifact {
     private boolean isAdjective(String pos) {
         return pos.startsWith("JJ");
     }
+
+    public void addConsensualBiterm(ConsensualBiterm biterm) {
+        consensualBiterms.add(biterm);
+    }
+
+    protected String getEnrichedBody() {
+        if (this.extendedBiterms != null) {
+            StringBuilder enrichedBody = new StringBuilder(this.textBody);
+            enrichedBody.append(this.textBody);
+            enrichedBody.append('\n');
+            for (ConsensualBiterm consensualBiterm : this.extendedBiterms) {
+                enrichedBody.append(consensualBiterm.toString());
+                enrichedBody.append('\n');
+            }
+            return enrichedBody.toString();
+        }
+        return this.textBody;
+    }
+
+
 }
