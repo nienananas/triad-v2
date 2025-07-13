@@ -83,6 +83,11 @@ public class Biterm {
         return false;
     }
 
+    @Override
+    public int hashCode() {
+        return firstTermString.hashCode() + secondTermString.hashCode();
+    }
+
     public int getWeight() {
         return weight;
     }

@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.ardoco.artifact.DesignDocumentArtifact;
 import io.github.ardoco.artifact.RequirementsDocumentArtifact;
 import io.github.ardoco.artifact.SourceCodeArtifact;
 
@@ -20,6 +21,7 @@ public class Project {
     private final String projectName;
     private final Path codePath;
     private final Path reqsPath;
+    private final Path designPath;
 
     public Project(String projectName) {
         this.projectName = projectName;
@@ -64,7 +66,7 @@ public class Project {
         }
     }
 
-    public Set<DesignArtifact> getDesignArtifacts() throws IOException {
+    public Set<DesignDocumentArtifact> getDesignArtifacts() throws IOException {
         try (Stream<Path> files = Files.walk(this.designPath)) {
             return files.filter(p -> p.toString().endsWith(".txt"))
                     .map(path -> {

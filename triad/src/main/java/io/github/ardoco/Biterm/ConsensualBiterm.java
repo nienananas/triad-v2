@@ -1,5 +1,6 @@
 /* Licensed under MIT 2025. */
 package io.github.ardoco.Biterm;
+import java.util.Objects;
 
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.trees.GrammaticalRelation;
@@ -49,5 +50,10 @@ public class ConsensualBiterm extends Biterm {
                     && this.destination.equals(other.destination);
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), source, destination);
     }
 }

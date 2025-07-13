@@ -67,6 +67,40 @@ public class SimilarityMatrix {
         this.targetTermNumMatrix = termsNumOfTarget;
     }
 
+    public double getScore(String source, String target) {
+        if (matrix.containsKey(source)) {
+            for (SingleLink link : matrix.get(source)) {
+                if (link.getTargetArtifactId().equals(target)) {
+                    return link.getScore();
+                }
+            }
+        }
+        return 0.0;
+    }
+
+    public void setScore(String source, String target, double newScore) {
+        if (!matrix.containsKey(source)) {
+            matrix.put(source, new LinksList());
+        }
+
+        LinksList links = matrix.get(source);
+        links.removeIf(link -> link.getTargetArtifactId().equals(target));
+        links.add(new SingleLink(source, target, newScore));
+    }
+
+    public SimilarityMatrix deepCopy() {
+        SimilarityMatrix newMatrix = new SimilarityMatrix();
+        for (Map.Entry<String, LinksList> entry : this.matrix.entrySet()) {
+            String source = entry.getKey();
+            LinksList copiedLinks = new LinksList();
+            for (SingleLink link : entry.getValue()) {
+                copiedLinks.add(link);
+            }
+            newMatrix.matrix.put(source, copiedLinks);
+        }
+        return newMatrix;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

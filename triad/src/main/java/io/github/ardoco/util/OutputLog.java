@@ -5,14 +5,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.github.ardoco.Biterm.Biterm;
 import io.github.ardoco.model.SimilarityMatrix;
 import io.github.ardoco.model.SingleLink;
-
-import java.util.List;
 
 public class OutputLog {
 
@@ -32,8 +31,10 @@ public class OutputLog {
         StringBuilder sb = new StringBuilder();
         sb.append("Source,Target,Score\n");
         for (SingleLink link : links) {
-            sb.append(String.format("%s,%s,%.4f\n", link.getSourceArtifactId(), link.getTargetArtifactId(), link.getScore()));
+            sb.append(String.format(
+                    "%s,%s,%.4f\n", link.getSourceArtifactId(), link.getTargetArtifactId(), link.getScore()));
         }
-        Files.writeString(Paths.get(path), sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        Files.writeString(
+                Paths.get(path), sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 }
