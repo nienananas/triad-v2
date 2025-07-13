@@ -1,4 +1,0 @@
-[SUMMARY]
-Monitoring Messages
-[DESCRIPTION]
-The _DronologyRuntimeMonitor_ shall provide functionality to retrieve monitoring messages and distribute them to clients

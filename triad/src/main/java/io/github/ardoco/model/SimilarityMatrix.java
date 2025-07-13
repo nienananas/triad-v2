@@ -1,6 +1,11 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.model;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +33,24 @@ public class SimilarityMatrix {
         return matrix.keySet();
     }
 
+    public Set<String> getTargetArtifacts() {
+        Set<String> targetArtifacts = new HashSet<>();
+        for (LinksList links : matrix.values()) {
+            for (SingleLink link : links) {
+                targetArtifacts.add(link.getTargetArtifactId());
+            }
+        }
+        return targetArtifacts;
+    }
+
+    public List<SingleLink> getAllLinks() {
+        List<SingleLink> allLinks = new ArrayList<>();
+        for (LinksList linksList : matrix.values()) {
+            allLinks.addAll(linksList);
+        }
+        return allLinks;
+    }
+
     public void setSourceTermMatrix(TermDocumentMatrix sourceTermMatrix) {
         this.sourceTermMatrix = sourceTermMatrix;
     }
@@ -43,4 +66,45 @@ public class SimilarityMatrix {
     public void setTargetTermNumMatrix(TermDocumentMatrix termsNumOfTarget) {
         this.targetTermNumMatrix = termsNumOfTarget;
     }
-} 
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        Set<String> targetArtifacts = getTargetArtifacts();
+        if (targetArtifacts.isEmpty() || getSourceArtifacts().isEmpty()) {
+            return "";
+        }
+
+        List<String> sortedTargets = new ArrayList<>(targetArtifacts);
+        Collections.sort(sortedTargets);
+
+        // Header
+        sb.append("Source Artifact,");
+        sb.append(String.join(",", sortedTargets));
+        sb.append("\n");
+
+        List<String> sortedSources = new ArrayList<>(getSourceArtifacts());
+        Collections.sort(sortedSources);
+
+        for (String source : sortedSources) {
+            sb.append(source).append(",");
+            LinksList links = matrix.get(source);
+            Map<String, Double> targetScores = new HashMap<>();
+            if (links != null) {
+                for (SingleLink link : links) {
+                    targetScores.put(link.getTargetArtifactId(), link.getScore());
+                }
+            }
+
+            List<String> scores = new ArrayList<>();
+            for (String target : sortedTargets) {
+                double score = targetScores.getOrDefault(target, 0.0);
+                scores.add(String.format("%.4f", score));
+            }
+            sb.append(String.join(",", scores));
+            sb.append("\n");
+        }
+
+        return sb.toString();
+    }
+}

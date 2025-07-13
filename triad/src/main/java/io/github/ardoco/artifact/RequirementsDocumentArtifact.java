@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.artifact;
 
 import org.slf4j.Logger;
@@ -15,4 +16,4 @@ public class RequirementsDocumentArtifact extends Artifact {
     protected void preProcessing() {
         logger.info("Preprocessing Requirements Document Artifact");
     }
-} 
+}

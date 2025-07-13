@@ -1,4 +1,0 @@
-[SUMMARY]
-Modify assigned routes
-[DESCRIPTION]
-A user may reorder routes or remove flight plans assigned to a UAV as long as the flight has not started execution.

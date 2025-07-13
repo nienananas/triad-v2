@@ -1,0 +1,4 @@
+Source,Target,Score
+RE-541,AbstractFlightPattern,0.0662
+RE-505,FlightRouteplanningService,0.0436
+RE-508,FlightRouteplanningServiceInstance,0.0218

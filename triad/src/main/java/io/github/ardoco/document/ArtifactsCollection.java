@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.document;
 
 import java.util.HashMap;
@@ -15,4 +16,4 @@ public class ArtifactsCollection extends HashMap<String, Artifact> {
     public ArtifactsCollection() {
         super();
     }
-} 
+}

@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.document;
 
 import java.util.ArrayList;
@@ -135,4 +136,4 @@ public class TermDocumentMatrix {
         }
         return new TermDocumentMatrix(oldMatrix.docNames, newTermNames, newMatrixData);
     }
-} 
+}

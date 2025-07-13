@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco;
 
 import java.io.IOException;
@@ -23,13 +24,13 @@ public class Project {
     public Project(String projectName) {
         this.projectName = projectName;
         this.codePath = Paths.get("dataset/" + this.projectName + "/Code/");
+        this.designPath = Paths.get("dataset/" + this.projectName + "/Design/");
         this.reqsPath = Paths.get("dataset/" + this.projectName + "/Requirements/");
     }
 
     public Set<SourceCodeArtifact> getCodeArtifacts() throws IOException {
         try (Stream<Path> files = Files.walk(this.codePath)) {
-            return files
-                    .filter(p -> p.toString().endsWith(".java"))
+            return files.filter(p -> p.toString().endsWith(".java"))
                     .map(path -> {
                         try {
                             String content = Files.readString(path);
@@ -47,8 +48,7 @@ public class Project {
 
     public Set<RequirementsDocumentArtifact> getRequirementsArtifacts() throws IOException {
         try (Stream<Path> files = Files.walk(this.reqsPath)) {
-            return files
-                    .filter(p -> p.toString().endsWith(".txt"))
+            return files.filter(p -> p.toString().endsWith(".txt"))
                     .map(path -> {
                         try {
                             String content = Files.readString(path);
@@ -64,7 +64,25 @@ public class Project {
         }
     }
 
+    public Set<DesignArtifact> getDesignArtifacts() throws IOException {
+        try (Stream<Path> files = Files.walk(this.designPath)) {
+            return files.filter(p -> p.toString().endsWith(".txt"))
+                    .map(path -> {
+                        try {
+                            String content = Files.readString(path);
+                            String identifier = path.getFileName().toString().replace(".txt", "");
+                            return new DesignDocumentArtifact(identifier, content);
+                        } catch (IOException e) {
+                            logger.error("Error reading file: " + path, e);
+                            return null;
+                        }
+                    })
+                    .filter(a -> a != null)
+                    .collect(Collectors.toSet());
+        }
+    }
+
     public String getName() {
         return projectName;
     }
-} 
+}

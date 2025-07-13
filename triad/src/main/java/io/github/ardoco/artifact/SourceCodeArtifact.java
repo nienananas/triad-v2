@@ -1,26 +1,23 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.artifact;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.nio.file.Paths;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.treesitter.TSLanguage;
 import org.treesitter.TSNode;
 import org.treesitter.TSParser;
 import org.treesitter.TSTree;
 import org.treesitter.TreeSitterJava;
 
-import edu.stanford.nlp.pipeline.*;
 import edu.stanford.nlp.ling.*;
+import edu.stanford.nlp.pipeline.*;
 import edu.stanford.nlp.semgraph.*;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.*;
 import edu.stanford.nlp.util.*;
 
 import io.github.ardoco.Biterm.Biterm;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SourceCodeArtifact extends Artifact {
 
@@ -55,10 +52,11 @@ public class SourceCodeArtifact extends Artifact {
 
         // Recursively traverse the AST
         extractElementsRecursive(rootNode, identifiers, this.textBody);
-        
+
         this.biterms = identifiers;
         return this.biterms;
     }
+
     private void extractElementsRecursive(TSNode node, Set<Biterm> elements, String sourceCode) {
         String nodeType = node.getType();
         // logger.debug("Visiting node: {} -> {}", nodeType, getNodeText(node, sourceCode)); // Debug
@@ -101,8 +99,10 @@ public class SourceCodeArtifact extends Artifact {
                 String cleanedBlockComment = blockCommentText;
 
                 if (cleanedBlockComment.startsWith("/*") && cleanedBlockComment.endsWith("*/")) {
-                    cleanedBlockComment = cleanedBlockComment.substring(2, cleanedBlockComment.length() - 2).trim();
-                    
+                    cleanedBlockComment = cleanedBlockComment
+                            .substring(2, cleanedBlockComment.length() - 2)
+                            .trim();
+
                     String[] lines = cleanedBlockComment.split("\r\n|\r|\n");
                     StringBuilder sb = new StringBuilder();
                     boolean firstContentLine = true;
@@ -150,11 +150,11 @@ public class SourceCodeArtifact extends Artifact {
                         paramTypeNode = grandChild;
                     }
                 }
-                
+
                 if (paramTypeNode == null && child.getChildCount() >= 2) {
                     TSNode first = child.getChild(0);
                     TSNode second = child.getChild(1);
-                    if(isTypeNode(first.getType()) && "identifier".equals(second.getType())){
+                    if (isTypeNode(first.getType()) && "identifier".equals(second.getType())) {
                         paramTypeNode = first;
                         paramNameNode = second;
                     }
@@ -169,15 +169,14 @@ public class SourceCodeArtifact extends Artifact {
             }
         }
     }
-    
-    private boolean isTypeNode(String nodeType) {
-        return "type_identifier".equals(nodeType) ||
-               "primitive_type".equals(nodeType) ||
-               "generic_type".equals(nodeType) ||
-               "scoped_type_identifier".equals(nodeType) ||
-               "array_type".equals(nodeType);
-    }
 
+    private boolean isTypeNode(String nodeType) {
+        return "type_identifier".equals(nodeType)
+                || "primitive_type".equals(nodeType)
+                || "generic_type".equals(nodeType)
+                || "scoped_type_identifier".equals(nodeType)
+                || "array_type".equals(nodeType);
+    }
 
     private void extractFieldInfo(TSNode fieldDeclarationNode, Set<Biterm> elements, String sourceCode) {
         TSNode typeNode = null;
@@ -190,16 +189,16 @@ public class SourceCodeArtifact extends Artifact {
                 if (typeNode == null) typeNode = child;
             } else if ("variable_declarator_list".equals(childType) || "variable_declarator".equals(childType)) {
                 if ("variable_declarator_list".equals(childType)) {
-                    for(int j=0; j < child.getChildCount(); j++) {
+                    for (int j = 0; j < child.getChildCount(); j++) {
                         TSNode declaratorChild = child.getChild(j);
-                        if("variable_declarator".equals(declaratorChild.getType())) {
+                        if ("variable_declarator".equals(declaratorChild.getType())) {
                             TSNode idNode = findChildNodeByType(declaratorChild, "identifier");
                             if (idNode != null) nameNodes.add(idNode);
                         }
                     }
                 } else {
-                     TSNode idNode = findChildNodeByType(child, "identifier");
-                     if (idNode != null) nameNodes.add(idNode);
+                    TSNode idNode = findChildNodeByType(child, "identifier");
+                    if (idNode != null) nameNodes.add(idNode);
                 }
             }
         }
@@ -208,18 +207,18 @@ public class SourceCodeArtifact extends Artifact {
             typeNode = findChildNodeByPredicate(fieldDeclarationNode, n -> isTypeNode(n.getType()));
         }
 
-
         if (typeNode != null) {
             String fieldType = getNodeText(typeNode, sourceCode);
             elements.addAll(getBitermsFromIdentifier(fieldType, 1));
 
             if (nameNodes.isEmpty()) {
-                 TSNode directNameNode = findChildNodeByTypeRecursive(fieldDeclarationNode, "identifier");
-                 if(directNameNode != null && !getNodeText(directNameNode, sourceCode).equals(fieldType)) {
-                     nameNodes.add(directNameNode);
-                 }
+                TSNode directNameNode = findChildNodeByTypeRecursive(fieldDeclarationNode, "identifier");
+                if (directNameNode != null
+                        && !getNodeText(directNameNode, sourceCode).equals(fieldType)) {
+                    nameNodes.add(directNameNode);
+                }
             }
-            
+
             for (TSNode nameNode : nameNodes) {
                 String fieldName = getNodeText(nameNode, sourceCode);
                 elements.addAll(getBitermsFromIdentifier(fieldName, 1));
@@ -227,7 +226,6 @@ public class SourceCodeArtifact extends Artifact {
             }
         }
     }
-
 
     private TSNode getMethodInvocationNameNode(TSNode methodInvocationNode) {
         TSNode nameNode = findChildNodeByType(methodInvocationNode, "identifier");
@@ -237,7 +235,7 @@ public class SourceCodeArtifact extends Artifact {
         if (fieldAccessNode != null) {
             return findLastChildNodeByType(fieldAccessNode, "identifier");
         }
-        
+
         TSNode scopedIdentifierNode = findChildNodeByType(methodInvocationNode, "scoped_identifier");
         if (scopedIdentifierNode != null) {
             return findLastChildNodeByType(scopedIdentifierNode, "identifier");
@@ -260,7 +258,7 @@ public class SourceCodeArtifact extends Artifact {
         }
         return null;
     }
-    
+
     private TSNode findChildNodeByPredicate(TSNode parent, java.util.function.Predicate<TSNode> predicate) {
         if (parent == null) return null;
         for (int i = 0; i < parent.getChildCount(); i++) {
@@ -271,7 +269,7 @@ public class SourceCodeArtifact extends Artifact {
         }
         return null;
     }
-    
+
     private TSNode findLastChildNodeByType(TSNode parent, String type) {
         if (parent == null) return null;
         TSNode foundNode = null;
@@ -283,18 +281,18 @@ public class SourceCodeArtifact extends Artifact {
         }
         return foundNode;
     }
-    
+
     private TSNode findChildNodeByTypeRecursive(TSNode parent, String type) {
         if (parent == null) return null;
         Queue<TSNode> queue = new LinkedList<>();
         queue.add(parent);
 
-        while(!queue.isEmpty()){
+        while (!queue.isEmpty()) {
             TSNode current = queue.poll();
-            if(type.equals(current.getType()) && current != parent) {
+            if (type.equals(current.getType()) && current != parent) {
                 return current;
             }
-            for(int i = 0; i < current.getChildCount(); i++){
+            for (int i = 0; i < current.getChildCount(); i++) {
                 queue.add(current.getChild(i));
             }
         }

@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.model;
 
 public class SingleLink implements Comparable<SingleLink> {
@@ -27,4 +28,4 @@ public class SingleLink implements Comparable<SingleLink> {
     public int compareTo(SingleLink other) {
         return Double.compare(this.score, other.score);
     }
-} 
+}

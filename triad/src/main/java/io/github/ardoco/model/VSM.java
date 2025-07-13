@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.model;
 
 import java.util.Collections;
@@ -17,7 +18,9 @@ public class VSM implements IRModel {
         ArtifactsCollection bothSourceAndTarget = new ArtifactsCollection();
         bothSourceAndTarget.putAll(source);
         bothSourceAndTarget.putAll(target);
-        return Compute(new TermDocumentMatrix(source), new TermDocumentMatrix(target),
+        return Compute(
+                new TermDocumentMatrix(source),
+                new TermDocumentMatrix(target),
                 new TermDocumentMatrix(bothSourceAndTarget));
     }
 
@@ -125,7 +128,10 @@ public class VSM implements IRModel {
                 }
                 double cross = Math.sqrt(asquared) * Math.sqrt(bsquared);
                 if (cross == 0.0) {
-                    links.add(new SingleLink(ids.getDocumentName(i).trim(), tfidf.getDocumentName(j).trim(), 0.0));
+                    links.add(new SingleLink(
+                            ids.getDocumentName(i).trim(),
+                            tfidf.getDocumentName(j).trim(),
+                            0.0));
                 } else {
                     links.add(new SingleLink(ids.getDocumentName(i), tfidf.getDocumentName(j), product / cross));
                 }
@@ -161,4 +167,4 @@ public class VSM implements IRModel {
     public TermDocumentMatrix getTermDocumentMatrixOfDocuments() {
         return documents;
     }
-} 
+}

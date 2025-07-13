@@ -1,8 +1,6 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.artifact;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,8 +10,8 @@ public class DesignDocumentArtifact extends Artifact {
 
     private String content;
 
-    public DesignDocumentArtifact(String content) {
-        super(null, content);
+    public DesignDocumentArtifact(String identifier, String textBody) {
+        super(identifier, textBody);
         logger.info("Preprocessing Design Document Artifact");
     }
 
@@ -22,4 +20,4 @@ public class DesignDocumentArtifact extends Artifact {
         System.out.println("Preprocessing Design Document Artifact");
         // nothing to do for design documents
     }
-} 
+}

@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.model;
 
 import io.github.ardoco.document.ArtifactsCollection;
@@ -11,4 +12,4 @@ public interface IRModel {
     TermDocumentMatrix getTermDocumentMatrixOfQueries();
 
     TermDocumentMatrix getTermDocumentMatrixOfDocuments();
-} 
+}

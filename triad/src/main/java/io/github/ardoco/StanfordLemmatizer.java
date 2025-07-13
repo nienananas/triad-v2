@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco;
 
 import java.util.List;
@@ -27,4 +28,4 @@ public class StanfordLemmatizer {
                 .map(token -> token.get(CoreAnnotations.LemmaAnnotation.class))
                 .collect(Collectors.joining(" "));
     }
-} 
+}

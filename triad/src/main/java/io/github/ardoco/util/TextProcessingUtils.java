@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.util;
 
 import java.util.Arrays;
@@ -10,7 +11,7 @@ public class TextProcessingUtils {
 
     public static List<String> removeStopwords(List<String> words) {
         return words.stream()
-            .filter(word -> !STOPWORDS.contains(word.toLowerCase()))
-            .toList();
+                .filter(word -> !STOPWORDS.contains(word.toLowerCase()))
+                .toList();
     }
-} 
+}

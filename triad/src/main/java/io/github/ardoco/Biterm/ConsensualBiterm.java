@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.Biterm;
 
 import edu.stanford.nlp.ling.IndexedWord;
@@ -7,7 +8,8 @@ public class ConsensualBiterm extends Biterm {
     private String source;
     private String destination;
 
-    public ConsensualBiterm(IndexedWord first, IndexedWord second, GrammaticalRelation relation, String source, String destination) {
+    public ConsensualBiterm(
+            IndexedWord first, IndexedWord second, GrammaticalRelation relation, String source, String destination) {
         super(first, second, relation);
         this.source = source;
         this.destination = destination;
@@ -42,9 +44,9 @@ public class ConsensualBiterm extends Biterm {
     public boolean equals(Object obj) {
         if (obj instanceof ConsensualBiterm) {
             ConsensualBiterm other = (ConsensualBiterm) obj;
-            return super.equals(other) && 
-                   this.source.equals(other.source) &&
-                   this.destination.equals(other.destination);
+            return super.equals(other)
+                    && this.source.equals(other.source)
+                    && this.destination.equals(other.destination);
         }
         return false;
     }

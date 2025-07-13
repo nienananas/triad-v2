@@ -1,18 +1,19 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.artifact;
 
-import edu.stanford.nlp.pipeline.*;
-import edu.stanford.nlp.ling.*;
-import edu.stanford.nlp.semgraph.*;
-import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.*;
-import edu.stanford.nlp.util.*;
-import io.github.ardoco.Biterm.Biterm;
-import io.github.ardoco.Biterm.ConsensualBiterm;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import edu.stanford.nlp.ling.*;
+import edu.stanford.nlp.pipeline.*;
+import edu.stanford.nlp.semgraph.*;
+import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.*;
+import edu.stanford.nlp.util.*;
+
+import io.github.ardoco.Biterm.Biterm;
+import io.github.ardoco.Biterm.ConsensualBiterm;
 
 public abstract class Artifact {
 
@@ -24,7 +25,7 @@ public abstract class Artifact {
     protected static StanfordCoreNLP pipeline;
     protected Set<ConsensualBiterm> extendedBiterms;
 
-    static { //TODO: static weg, stattdessen statische Methode loadPipeline() 
+    static { // TODO: static weg, stattdessen statische Methode loadPipeline()
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize,ssplit,pos,lemma,depparse");
         props.setProperty("coref.algorithm", "neural");
@@ -58,7 +59,10 @@ public abstract class Artifact {
     }
 
     public void extendBiterms(Set<String> consensualBiterms) {
-        logger.info("Artifact.extendBiterms() called for: {} with consensual biterms: {}", this.getClass().getSimpleName(), consensualBiterms);
+        logger.info(
+                "Artifact.extendBiterms() called for: {} with consensual biterms: {}",
+                this.getClass().getSimpleName(),
+                consensualBiterms);
         // TODO: expand via added weight to IR method?
     }
 
@@ -70,12 +74,10 @@ public abstract class Artifact {
         this.textBody = textBody;
     }
 
-
     protected boolean isValidWord(IndexedWord word) {
-        //String pos = word.tag();
+        // String pos = word.tag();
         // Check if the POS tag indicates a verb, noun, or adjective
         return isVerb(word.tag()) || isNoun(word.tag()) || isAdjective(word.tag());
-
     }
 
     protected Set<Biterm> getBitermsFromText(String text) {
@@ -86,15 +88,15 @@ public abstract class Artifact {
         Annotation document = new Annotation(text);
         pipeline.annotate(document);
 
-        Set<Biterm> biterms = new LinkedHashSet<>(); //TODO: Überall LinkedHashSet verwenden, für reihenfolge
+        Set<Biterm> biterms = new LinkedHashSet<>(); // TODO: Überall LinkedHashSet verwenden, für reihenfolge
 
         for (CoreMap sentence : document.get(CoreAnnotations.SentencesAnnotation.class)) {
             SemanticGraph dependencies = sentence.get(BasicDependenciesAnnotation.class);
-            
+
             for (SemanticGraphEdge edge : dependencies.edgeListSorted()) {
                 IndexedWord governor = edge.getGovernor();
                 IndexedWord dependent = edge.getDependent();
-                
+
                 if (isValidWord(governor) && isValidWord(dependent)) {
                     biterms.add(new Biterm(governor, dependent, edge.getRelation()));
                 }
@@ -132,6 +134,4 @@ public abstract class Artifact {
         }
         return this.textBody;
     }
-
-
 }
