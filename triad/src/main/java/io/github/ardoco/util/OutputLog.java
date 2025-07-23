@@ -1,8 +1,8 @@
-/* Licensed under MIT 2025. */
 package io.github.ardoco.util;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
@@ -36,5 +36,23 @@ public class OutputLog {
         }
         Files.writeString(
                 Paths.get(path), sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    public static void writePrecisionRecallCurveToFile(String path, String approachName, List<Double> precisions) throws IOException {
+        Path filePath = Paths.get(path);
+        StringBuilder sb = new StringBuilder();
+
+        // If the file doesn't exist, write the header first.
+        if (!Files.exists(filePath)) {
+            sb.append("Approach,Recall,Precision\n");
+        }
+
+        for (int i = 0; i < precisions.size(); i++) {
+            double recallLevel = (i + 1) / 20.0; // From 0.05 to 1.00
+            double precision = precisions.get(i);
+            sb.append(String.format("%s,%.2f,%.4f\n", approachName, recallLevel, precision));
+        }
+
+        Files.writeString(filePath, sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }
 }

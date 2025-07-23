@@ -1,4 +1,3 @@
-/* Licensed under MIT 2025. */
 package io.github.ardoco;
 
 import java.io.IOException;
@@ -6,22 +5,28 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.math3.stat.inference.WilcoxonSignedRankTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.kit.kastel.mcse.ardoco.metrics.ClassificationMetricsCalculator;
+import edu.kit.kastel.mcse.ardoco.metrics.result.SingleClassificationResult;
+import edu.stanford.nlp.util.IdentityHashSet;
 import io.github.ardoco.Biterm.Biterm;
 import io.github.ardoco.Biterm.ConsensualBiterm;
 import io.github.ardoco.artifact.DesignDocumentArtifact;
 import io.github.ardoco.artifact.RequirementsDocumentArtifact;
 import io.github.ardoco.artifact.SourceCodeArtifact;
 import io.github.ardoco.document.ArtifactsCollection;
-import io.github.ardoco.model.Evaluation;
 import io.github.ardoco.model.GoldStandard;
 import io.github.ardoco.model.IRModel;
 import io.github.ardoco.model.JSD;
@@ -31,6 +36,7 @@ import io.github.ardoco.model.SimilarityMatrix;
 import io.github.ardoco.model.SingleLink;
 import io.github.ardoco.model.VSM;
 import io.github.ardoco.util.OutputLog;
+
 
 public class App {
     private static final Logger logger = LoggerFactory.getLogger(App.class);
@@ -113,7 +119,7 @@ public class App {
         for (IRModel irModel : IR_MODELS_TO_RUN) {
             logger.info("--- RUNNING ANALYSIS WITH IR MODEL: {} ---", irModel.getModelName());
 
-            // calculate similarity pair wise
+            //  similarity pair wise
             var reqDesignSimilarity = irModel.Compute(reqCollection, designCollection);
             var designCodeSimilarity = irModel.Compute(designCollection, codeCollection);
             var reqCodeSimilarity = irModel.Compute(reqCollection, codeCollection);
@@ -126,19 +132,38 @@ public class App {
 
             // IR only
             SimilarityMatrix irOnlyResults = reqCodeSimilarity;
-            evaluateAndLog("IR-ONLY - " + irModel.getModelName(), irOnlyResults, goldStandard);
+            evaluateAndLog("IR-ONLY - " + irModel.getModelName(), irOnlyResults, goldStandard, project.getName());
 
             // TRIAD full (b+o+i)
             SimilarityMatrix triadResults = adjustScoresByTransitivity(
                     reqCodeSimilarity, reqReqSimilarity, reqDesignSimilarity, designDesignSimilarity, designCodeSimilarity);
-            evaluateAndLog("TRIAD (b+o+i) - " + irModel.getModelName(), triadResults, goldStandard);
+            evaluateAndLog("TRIAD (b+o+i) - " + irModel.getModelName(), triadResults, goldStandard, project.getName());
             
             logger.info("--- Statistical Comparison for {} ---", irModel.getModelName());
-            List<Double> triadFMeasures = Evaluation.getFMeasuresAt11RecallLevels(triadResults, goldStandard);
-            List<Double> irOnlyFMeasures = Evaluation.getFMeasuresAt11RecallLevels(irOnlyResults, goldStandard);
-            
-            double pValue = Evaluation.calculatePValue(triadFMeasures, irOnlyFMeasures);
-            double cliffsDelta = Evaluation.calculateCliffsDelta(triadFMeasures, irOnlyFMeasures);
+            List<Double> triadPrecisions = calculatePrecisionRecallCurve(triadResults, goldStandard);
+            List<Double> irOnlyPrecisions = calculatePrecisionRecallCurve(irOnlyResults, goldStandard);
+    
+            List<Double> triadFMeasures = new ArrayList<>();
+            List<Double> irOnlyFMeasures = new ArrayList<>();
+        
+            for (int j = 0; j < 20; j++) {
+                double recallLevel = (j + 1) / 20.0; // From 0.05 to 1.00
+                double triadPrecision = triadPrecisions.get(j);
+                double irOnlyPrecision = irOnlyPrecisions.get(j);
+                
+                double triadF1 = (triadPrecision + recallLevel) == 0 ? 0.0 : 2 * (triadPrecision * recallLevel) / (triadPrecision + recallLevel);
+                triadFMeasures.add(triadF1);
+        
+                double irOnlyF1 = (irOnlyPrecision + recallLevel) == 0 ? 0.0 : 2 * (irOnlyPrecision * recallLevel) / (irOnlyPrecision + recallLevel);
+                irOnlyFMeasures.add(irOnlyF1);
+            }
+
+            double[] triadFMeasuresArray = triadFMeasures.stream().mapToDouble(d->d).toArray();
+            double[] irOnlyFMeasuresArray = irOnlyFMeasures.stream().mapToDouble(d->d).toArray();
+        
+            WilcoxonSignedRankTest wilcoxon = new WilcoxonSignedRankTest();
+            double pValue = wilcoxon.wilcoxonSignedRankTest(triadFMeasuresArray, irOnlyFMeasuresArray, true);
+            double cliffsDelta = calculateCliffsDelta(triadFMeasures, irOnlyFMeasures);
 
             logger.info("TRIAD vs IR-ONLY on {}: p-value = {}, Cliff's Delta = {}", irModel.getModelName(), String.format("%.4f", pValue), String.format("%.4f", cliffsDelta));
         
@@ -179,16 +204,18 @@ public class App {
 
     }
 
-    private static void evaluateAndLog(String approachName, SimilarityMatrix results, GoldStandard goldStandard) throws IOException {
-        List<SingleLink> allLinks = results.getAllLinks();
+    private static void evaluateAndLog(String approachName, SimilarityMatrix results, GoldStandard goldStandard, String projectName) throws IOException {
+        Set<SingleLink> allLinks = new IdentityHashSet<>(results.getAllLinks()); 
+        Set<SingleLink> groundTruthLinks = new IdentityHashSet<>(goldStandard.getLinks());
 
-        // Calculate Precision, Recall, F-measure for the whole set
-        double precision = Evaluation.calculatePrecision(allLinks, goldStandard);
-        double recall = Evaluation.calculateRecall(allLinks, goldStandard);
-        double fMeasure = Evaluation.calculateFMeasure(precision, recall);
+        ClassificationMetricsCalculator calculator = ClassificationMetricsCalculator.getInstance();
+        SingleClassificationResult<String> result = calculator.calculateMetrics(allLinks, groundTruthLinks, l -> l.getSourceArtifactId() + " -> " + l.getTargetArtifactId(), null);
+        double precision = result.getPrecision();
+        double recall = result.getRecall();
+        double fMeasure = result.getF1();
         
         // Calculate MAP
-        double map = Evaluation.calculateMAP(results, goldStandard);
+        double map = calculateMAP(results, goldStandard);
 
         logger.info("Results for: {}", approachName);
         logger.info("Precision: {}", String.format("%.4f", precision));
@@ -199,7 +226,17 @@ public class App {
         // Log to file
         String logMessage = String.format("Approach: %s, Precision: %.4f, Recall: %.4f, F-Measure: %.4f, MAP: %.4f%n", 
                                           approachName, precision, recall, fMeasure, map);
-        Files.writeString(Paths.get("output/evaluation_results.txt"), logMessage, java.nio.file.StandardOpenOption.APPEND, java.nio.file.StandardOpenOption.CREATE);
+        
+        Path outputPath = Paths.get("output/evaluation_results.txt");
+        Files.createDirectories(outputPath.getParent());
+        Files.writeString(outputPath, logMessage, java.nio.file.StandardOpenOption.APPEND, java.nio.file.StandardOpenOption.CREATE);
+
+        // Precision-Recall Curve Calculation and Export
+        List<Double> interpolatedPrecisions = calculatePrecisionRecallCurve(results, goldStandard);
+        String prCurvePath = "output/" + projectName + "/precision_recall_curves.csv";
+        Files.createDirectories(Paths.get(prCurvePath).getParent());
+        OutputLog.writePrecisionRecallCurveToFile(prCurvePath, approachName, interpolatedPrecisions);
+        logger.info("Precision-Recall curve data for '{}' written to {}", approachName, prCurvePath);
     }
     
     private static SimilarityMatrix adjustScoresByTransitivity(
@@ -300,5 +337,94 @@ public class App {
                 .collect(Collectors.toList());
 
         return filteredLinks.subList(0, Math.min(t, filteredLinks.size()));
+    }
+    
+    private static List<Double> calculatePrecisionRecallCurve(SimilarityMatrix similarityMatrix, GoldStandard gold) {
+        List<SingleLink> allLinks = new ArrayList<>(similarityMatrix.getAllLinks());
+        allLinks.sort(Comparator.comparingDouble(SingleLink::getScore).reversed());
+
+        int totalRelevant = gold.getTotalRelevantLinks();
+        if (totalRelevant == 0) {
+            return Collections.nCopies(20, 0.0);
+        }
+
+        List<Double> recalls = new ArrayList<>();
+        List<Double> precisions = new ArrayList<>();
+        int correctRetrieved = 0;
+
+        for (int i = 0; i < allLinks.size(); i++) {
+            SingleLink link = allLinks.get(i);
+            if (gold.isLink(link.getSourceArtifactId(), link.getTargetArtifactId())) {
+                correctRetrieved++;
+            }
+            double currentRecall = (double) correctRetrieved / totalRelevant;
+            double currentPrecision = (double) correctRetrieved / (i + 1);
+            recalls.add(currentRecall);
+            precisions.add(currentPrecision);
+        }
+
+        List<Double> interpolatedPrecisions = new ArrayList<>();
+        for (int i = 1; i <= 20; i++) {
+            double recallLevel = i / 20.0;
+            double maxPrecision = 0.0;
+            for (int j = 0; j < recalls.size(); j++) {
+                if (recalls.get(j) >= recallLevel) {
+                    if (precisions.get(j) > maxPrecision) {
+                        maxPrecision = precisions.get(j);
+                    }
+                }
+            }
+            interpolatedPrecisions.add(maxPrecision);
+        }
+        return interpolatedPrecisions;
+    }
+
+    private static double calculateAP(List<SingleLink> rankedRetrieved, Set<String> relevantLinks) {
+        if (rankedRetrieved.isEmpty() || relevantLinks.isEmpty()) {
+            return 0.0;
+        }
+        double ap = 0.0;
+        int relevantCount = 0;
+        for (int i = 0; i < rankedRetrieved.size(); i++) {
+            SingleLink link = rankedRetrieved.get(i);
+            if (relevantLinks.contains(link.getTargetArtifactId())) {
+                relevantCount++;
+                ap += (double) relevantCount / (i + 1);
+            }
+        }
+        return ap / relevantLinks.size();
+    }
+
+    private static double calculateMAP(SimilarityMatrix similarityMatrix, GoldStandard gold) {
+        double map = 0.0;
+        Set<String> sources = similarityMatrix.getSourceArtifacts();
+        if (sources.isEmpty()) {
+            return 0.0;
+        }
+        int sourceCount = 0;
+        for (String source : sources) {
+            Set<String> relevant = gold.getRelevantLinks(source);
+            if (relevant.isEmpty()){
+                continue;
+            }
+            sourceCount++;
+            List<SingleLink> rankedLinks = new ArrayList<>(similarityMatrix.getLinks(source));
+            rankedLinks.sort(Comparator.comparingDouble(SingleLink::getScore).reversed());
+            map += calculateAP(rankedLinks, relevant);
+        }
+        return sourceCount == 0 ? 0.0 : map / sourceCount;
+    }
+    
+    private static double calculateCliffsDelta(List<Double> sample1, List<Double> sample2) {
+        int more = 0;
+        int less = 0;
+        for (double x1 : sample1) {
+            for (double x2 : sample2) {
+                if (x1 > x2) more++;
+                if (x1 < x2) less++;
+            }
+        }
+        if (sample1.isEmpty() || sample2.isEmpty()) return 0;
+        return (double) (more - less) / (sample1.size() * sample2.size());
     }
 }

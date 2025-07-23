@@ -60,6 +60,12 @@
       <version>${slf4j.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>io.github.ardoco</groupId>
+      <artifactId>metrics</artifactId>
+      <version>0.1.1</version>
+    </dependency>
+
   </dependencies>
 
   <repositories>

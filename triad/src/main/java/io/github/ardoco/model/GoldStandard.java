@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import edu.stanford.nlp.util.IdentityHashSet;
+
 public class GoldStandard {
     private final Map<String, Set<String>> links = new HashMap<>();
 
@@ -27,6 +29,12 @@ public class GoldStandard {
                 }
             });
         }
+    }
+
+    public Set<SingleLink> getLinks() {
+        Set<SingleLink> allLinks = new IdentityHashSet<>();
+        links.forEach((source, targets) -> targets.forEach(target -> allLinks.add(new SingleLink(source, target, 1.0))));
+        return allLinks;
     }
 
     public boolean isLink(String source, String target) {

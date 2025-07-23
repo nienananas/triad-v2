@@ -8,3 +8,17 @@ Approach: IR-ONLY - LSI, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, M
 Approach: TRIAD (b+o+i) - LSI, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1002
 Approach: IR-ONLY - JSD, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.0374
 Approach: TRIAD (b+o+i) - JSD, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.0370
+Approach: IR-ONLY - VSM, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1674
+Approach: TRIAD (b+o+i) - VSM, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1381
+Approach: IR-ONLY - LSI, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1144
+Approach: TRIAD (b+o+i) - LSI, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1019
+Approach: IR-ONLY - JSD, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.0381
+Approach: TRIAD (b+o+i) - JSD, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.0376
+Approach: IR-ONLY - VSM, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1674
+Approach: TRIAD (b+o+i) - VSM, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1381
+Approach: IR-ONLY - VSM, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1674
+Approach: TRIAD (b+o+i) - VSM, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1381
+Approach: IR-ONLY - LSI, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1144
+Approach: TRIAD (b+o+i) - LSI, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.1019
+Approach: IR-ONLY - JSD, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.0381
+Approach: TRIAD (b+o+i) - JSD, Precision: 0.0148, Recall: 1.0000, F-Measure: 0.0291, MAP: 0.0376

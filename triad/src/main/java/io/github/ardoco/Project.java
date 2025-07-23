@@ -32,11 +32,13 @@ public class Project {
 
     public Set<SourceCodeArtifact> getCodeArtifacts() throws IOException {
         try (Stream<Path> files = Files.walk(this.codePath)) {
-            return files.filter(p -> p.toString().endsWith(".java"))
+            return files.filter(Files::isRegularFile)
                     .map(path -> {
                         try {
                             String content = Files.readString(path);
-                            String name = path.getFileName().toString().replace(".java", "");
+                            String fileName = path.getFileName().toString();
+                            int lastDot = fileName.lastIndexOf('.');
+                            String name = (lastDot > 0) ? fileName.substring(0, lastDot) : fileName;
                             return new SourceCodeArtifact(name, content);
                         } catch (IOException e) {
                             logger.error("Error reading file: " + path, e);
@@ -50,11 +52,13 @@ public class Project {
 
     public Set<RequirementsDocumentArtifact> getRequirementsArtifacts() throws IOException {
         try (Stream<Path> files = Files.walk(this.reqsPath)) {
-            return files.filter(p -> p.toString().endsWith(".txt"))
+            return files.filter(Files::isRegularFile)
                     .map(path -> {
                         try {
                             String content = Files.readString(path);
-                            String identifier = path.getFileName().toString().replace(".txt", "");
+                            String fileName = path.getFileName().toString();
+                            int lastDot = fileName.lastIndexOf('.');
+                            String identifier = (lastDot > 0) ? fileName.substring(0, lastDot) : fileName;
                             return new RequirementsDocumentArtifact(identifier, content);
                         } catch (IOException e) {
                             logger.error("Error reading file: " + path, e);
@@ -68,11 +72,13 @@ public class Project {
 
     public Set<DesignDocumentArtifact> getDesignArtifacts() throws IOException {
         try (Stream<Path> files = Files.walk(this.designPath)) {
-            return files.filter(p -> p.toString().endsWith(".txt"))
+            return files.filter(Files::isRegularFile)
                     .map(path -> {
                         try {
                             String content = Files.readString(path);
-                            String identifier = path.getFileName().toString().replace(".txt", "");
+                            String fileName = path.getFileName().toString();
+                            int lastDot = fileName.lastIndexOf('.');
+                            String identifier = (lastDot > 0) ? fileName.substring(0, lastDot) : fileName;
                             return new DesignDocumentArtifact(identifier, content);
                         } catch (IOException e) {
                             logger.error("Error reading file: " + path, e);
