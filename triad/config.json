@@ -1,0 +1,20 @@
+{
+  "projects": [
+    {
+      "name": "Warc",
+      "source": {
+        "path": "warc/NFR",
+        "type": "TEXTUAL"
+      },
+      "intermediate": {
+        "path": "warc/SRS",
+        "type": "TEXTUAL"
+      },
+      "target": {
+        "path": "warc/FRS",
+        "type": "TEXTUAL"
+      },
+      "goldStandardPath": "warc/gold_standard/NFR-FRS.txt"
+    }
+  ]
+}

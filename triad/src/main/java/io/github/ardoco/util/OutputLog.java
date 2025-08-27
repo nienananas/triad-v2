@@ -1,5 +1,9 @@
 package io.github.ardoco.util;
 
+import io.github.ardoco.ir.SimilarityMatrix;
+import io.github.ardoco.ir.SingleLink;
+import io.github.ardoco.model.Biterm;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,10 +12,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import io.github.ardoco.Biterm.Biterm;
-import io.github.ardoco.model.SimilarityMatrix;
-import io.github.ardoco.model.SingleLink;
 
 public class OutputLog {
 
