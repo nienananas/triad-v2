@@ -15,6 +15,22 @@
         "type": "TEXTUAL"
       },
       "goldStandardPath": "warc/gold_standard/NFR-FRS.txt"
+    },
+    {
+      "name": "Dronology",
+      "source": {
+        "path": "Dronology/Requirements",
+        "type": "TEXTUAL"
+      },
+      "intermediate": {
+        "path": "Dronology/Design",
+        "type": "TEXTUAL"
+      },
+      "target": {
+        "path": "Dronology/Code",
+        "type": "JAVA_CODE"
+      },
+      "goldStandardPath": "Dronology/gold_standard/req-code.txt"
     }
   ]
 }
