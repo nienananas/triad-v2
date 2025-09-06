@@ -35,7 +35,7 @@ public abstract class Artifact {
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize,ssplit,pos,lemma,depparse");
         pipeline = new StanfordCoreNLP(props);
-        logger.info("StanfordCoreNLP pipeline initialized for Artifact.");
+        logger.info("StanfordCoreNLP pipeline initialized for dependency parsing.");
     }
 
     protected Artifact(String identifier, String textBody) {
@@ -76,7 +76,8 @@ public abstract class Artifact {
 
     public Set<Biterm> getBiterms() {
         if (this.biterms == null) {
-            this.biterms = getBitermsFromText(this.textBody);
+            String cleanedTextBody = this.textBody.replaceAll("(?i)\\[(SUMMARY|DESCRIPTION)\\]", " ");
+            this.biterms = getBitermsFromText(cleanedTextBody);
         }
         return this.biterms;
     }
@@ -85,14 +86,14 @@ public abstract class Artifact {
     public String getTextBody() { return textBody; }
 
     protected Set<Biterm> getBitermsFromText(String text) {
-        Set<Biterm> extracted = new LinkedHashSet<>();
-        if (text == null || text.isBlank()) return extracted;
+        Map<Biterm, Integer> bitermFrequencies = new HashMap<>();
+        if (text == null || text.isBlank()) return new HashSet<>();
 
         Annotation doc = new Annotation(text);
         pipeline.annotate(doc);
 
         List<CoreMap> sentences = doc.get(CoreAnnotations.SentencesAnnotation.class);
-        if (sentences == null) return extracted;
+        if (sentences == null) return new HashSet<>();
 
         for (CoreMap sentence : sentences) {
             SemanticGraph deps = sentence.get(EnhancedPlusPlusDependenciesAnnotation.class);
@@ -113,13 +114,30 @@ public abstract class Artifact {
                     continue;
                 }
 
-                extracted.add(new Biterm(processedGov, processedDep));
-                extracted.add(new Biterm(processedDep, processedGov));
+                // The dependency edge implies two directional biterms.
+                // A biterm's canonical form is handled by its constructor.
+                Biterm biterm1 = new Biterm(processedGov, processedDep);
+                bitermFrequencies.merge(biterm1, 1, Integer::sum);
+
+                Biterm biterm2 = new Biterm(processedDep, processedGov);
+                bitermFrequencies.merge(biterm2, 1, Integer::sum);
+
             }
         }
-        return extracted;
+
+        Set<Biterm> finalBiterms = new HashSet<>();
+        for (Map.Entry<Biterm, Integer> entry : bitermFrequencies.entrySet()) {
+            Biterm b = entry.getKey();
+            // Set the final weight of the biterm to its total frequency in the document.
+            b.setWeight(entry.getValue());
+            finalBiterms.add(b);
+        }
+        return finalBiterms;
     }
 
+    /**
+     * Checks if the Part-of-Speech tag is for a content-bearing word (noun, verb, or adjective).
+     */
     private static boolean isContentPOS(String pos) {
         return pos != null && (pos.startsWith("NN") || pos.startsWith("VB") || pos.startsWith("JJ"));
     }

@@ -8,12 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TextProcessor {
@@ -42,66 +42,100 @@ public class TextProcessor {
     }
 
     /**
-     * Processes natural language text with a standard pipeline.
+     * Processes natural language text with a standard pipeline, including removal of Dronology-specific headers.
      */
     public static String processText(String text) {
+        String cleaned = cleanRawText(text); // This removes headers
+        return Arrays.stream(cleaned.split("\\s+"))
+                .map(TextProcessor::processWord)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.joining(" "));
+    }
+
+    /**
+     * Processes code identifiers by splitting camelCase and snake_case, stemming, and removing stopwords.
+     */
+     public static String processIdentifier(String text) {
+        // Identifiers don't have headers, but they do have special characters
         String cleaned = cleanCharacters(text);
-        String camelCaseSplit = splitCamelCase(cleaned);
-        String lengthFiltered = lengthFilter(camelCaseSplit, 2);
-        String lowercased = lengthFiltered.toLowerCase(Locale.ROOT);
+        return Arrays.stream(cleaned.split("\\s+"))
+                .map(TextProcessor::processWord)
+                .collect(Collectors.joining(" "))
+                .trim();
+    }
+
+    /**
+     * Applies the core processing pipeline to a single word/token.
+     */
+    private static String processWord(String word) {
+        String processedWord = word;
+        // Handle pluralized acronyms before other processing
+        if (processedWord.endsWith("s") && processedWord.length() > 1 && Character.isUpperCase(processedWord.charAt(processedWord.length() - 2))) {
+            processedWord = processedWord.substring(0, processedWord.length() - 1);
+        }
+
+        String camelCaseSplit = splitCamelCase(processedWord);
+        String snakeCaseSplit = splitSnakeCase(camelCaseSplit);
+        String lowercased = snakeCaseSplit.toLowerCase(Locale.ROOT);
         String stopwordsRemoved1 = removeStopwords(lowercased);
         String stemmed = stemText(stopwordsRemoved1);
         String stopwordsRemoved2 = removeStopwords(stemmed);
-        return stopwordsRemoved2.trim();
+        return lengthFilter(stopwordsRemoved2, 2).trim();
     }
     
     /**
-     * Processes code identifiers by splitting camelCase and snake_case.
+     * Cleans raw text from artifacts by removing Dronology headers and special characters.
      */
-     public static String processIdentifier(String text) {
-        String cleaned = cleanCharacters(text);
-        String camelCaseSplit = splitCamelCase(cleaned);
-        String snakeCaseSplit = splitSnakeCase(camelCaseSplit);
-        String lengthFiltered = lengthFilter(snakeCaseSplit, 2);
-        String lowercased = lengthFiltered.toLowerCase(Locale.ROOT);
-        String stopwordsRemoved = removeStopwords(lowercased);
-        String stemmed = stemText(stopwordsRemoved);
-        return removeStopwords(stemmed).trim();
-    }
-
-
-    private static String cleanCharacters(String input) {
-        Pattern pattern = Pattern.compile("[a-zA-Z]+");
-        Matcher matcher = pattern.matcher(input);
-        StringBuilder sb = new StringBuilder();
-        while (matcher.find()) {
-            sb.append(matcher.group()).append(" ");
-        }
-        return sb.toString().trim();
+    private static String cleanRawText(String input) {
+        String noHeaders = input.replaceAll("(?i)\\[(SUMMARY|DESCRIPTION)\\]", " ");
+        return cleanCharacters(noHeaders);
     }
 
     /**
-     * A specific processing pipeline for individual terms after dependency parsing.
+     * Generic character cleaning: replaces hyphens, splits on other non-alphanumerics.
+     */
+    private static String cleanCharacters(String input) {
+        // This is the correct logic: remove hyphens to merge words, then clean.
+        String noHyphens = input.replace("-", "");
+        String cleaned = noHyphens.replaceAll("[^a-zA-Z]", " ").replaceAll("\\s+", " ").trim();
+        // Special handling for acronyms must happen before lowercasing.
+        return cleaned.replaceAll("\\bUAVs\\b", "UAV");
+    }
+
+    /**
+     * Processes a single term using a pipeline that mirrors the original TRIAD implementation.
+     * This is used after dependency parsing to ensure compatibility with the original biterm extraction logic.
      */
     public static String processTermOriginal(String term) {
         if (term == null || term.isBlank()) return "";
-        String cleaned = cleanCharacters(term);
+
+        // This pipeline directly replicates the logic from the original TRIAD's StanfordNlpUtil.doTextProcess
+        String cleaned = term.replaceAll("[^a-zA-Z]+", " ").trim();
         String camelCaseSplit = splitCamelCase(cleaned);
         String lemmatized = StanfordLemmatizer.lemmatize(camelCaseSplit);
         String lengthFiltered = lengthFilter(lemmatized, 3);
         String lowercased = lengthFiltered.toLowerCase(Locale.ROOT);
-        String stopwordsRemoved = removeStopwords(lowercased);
+        // ORIGINAL ORDER: Stopword removal happens BEFORE stemming.
+        String stopwordsRemoved = removeStopwords(lowercased); 
+        String stemmed = stemText(stopwordsRemoved);
         
-        // Handle special case, copied from original codebase
-        //TODO: löschen
-        if ("sent".equals(stopwordsRemoved.trim())) {
+        // Retained for compatibility with the original implementation.
+        // TODO: delete
+        if ("sent".equals(stemmed.trim())) {
             return "send";
         }
-        return stopwordsRemoved.trim();
+        
+        // Final check for length, as stemming can shorten words
+        return lengthFilter(stemmed, 3).trim();
     }
 
     private static String splitCamelCase(String s) {
-        return s.replaceAll(
+        // This is a two-step process. First, we handle a specific acronym pluralization
+        // pattern (e.g., "UAVs") that the standard regex doesn't handle well.
+        String acronymProcessed = splitAcronyms(s);
+
+        // Then, we apply a standard camel case splitting regex to the result.
+        return acronymProcessed.replaceAll(
             String.format("%s|%s|%s",
                 "(?<=[A-Z])(?=[A-Z][a-z])",
                 "(?<=[^A-Z])(?=[A-Z])",
@@ -109,6 +143,43 @@ public class TextProcessor {
             ),
             " "
         ).replaceAll("  ", " ");
+    }
+    
+    /**
+     * Replicates a specific acronym handling routine from the original TRIAD's CamelCase.java.
+     * The idea is to correctly split pluralized acronyms like "UAVs" into "UAV s".
+     *
+     * @param input The string to process.
+     * @return The string with the specific acronym pattern split.
+     */
+    private static String splitAcronyms(String input) {
+        List<String> words = new ArrayList<>();
+        for (String word : input.split("\\s+")) {
+            if (word.isEmpty()) continue;
+
+            StringBuilder currentWord = new StringBuilder();
+            for (int i = 0; i < word.length(); i++) {
+                char currentChar = word.charAt(i);
+
+                // Check for "end-of-acronym 's'" pattern
+                if (i > 0 && Character.isUpperCase(word.charAt(i - 1)) && currentChar == 's') {
+                    boolean isEndOfWord = (i == word.length() - 1);
+                    boolean isFollowedByUppercase = !isEndOfWord && Character.isUpperCase(word.charAt(i + 1));
+                    
+                    if (isEndOfWord || isFollowedByUppercase) {
+                        words.add(currentWord.toString());
+                        words.add("s");
+                        currentWord.setLength(0); // Reset
+                        continue;
+                    }
+                }
+                currentWord.append(currentChar);
+            }
+            if (currentWord.length() > 0) {
+                words.add(currentWord.toString());
+            }
+        }
+        return String.join(" ", words);
     }
 
     private static String splitSnakeCase(String s) {

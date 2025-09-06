@@ -114,13 +114,13 @@ class ArtifactBitermExtractionTest {
     }
 
     /**
-     * NOTE: This test is special. The original TRIAD's code processing was different from the refactored
-     * tree-sitter based approach. It likely processed a concatenation of extracted elements (class name, method names,
-     * comments) as a single block of text.
+     * NOTE: This test case is special. The original TRIAD implementation processed source code differently than the
+     * new tree-sitter based approach. It likely concatenated extracted elements (class names, method names, comments)
+     * into a single text block for analysis.
      * <p>
-     * This test verifies that the dependency-parsing biterm extraction (`getBitermsFromText`) in the new implementation
-     * produces the correct output when given the *processed text* that the original implementation would have generated.
-     * This isolates and validates the biterm extraction logic itself, which is a key part of the refactoring.
+     * This test verifies that our dependency-parsing biterm extraction (`getBitermsFromText`) produces the correct
+     * output when given the *processed text* that the original implementation would have generated. This allows us to
+     * validate the core biterm extraction logic in isolation.
      */
     @Test
     @DisplayName("Test Biterm Extraction from Processed Code Text (FlightManagerService)")

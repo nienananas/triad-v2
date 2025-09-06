@@ -5,11 +5,11 @@ import java.util.Objects;
 public class Biterm implements Comparable<Biterm> {
     private final String term1;
     private final String term2;
-    private final String canonicalRepresentation;
+    private final String stringRepresentation; 
     private int weight = 1;
 
     public Biterm(String term1, String term2) {
-        // Canonicalize by sorting alphabetically to treat (a,b) and (b,a) as the same term.
+        // Ensure a canonical representation by sorting terms alphabetically.
         if (term1.compareTo(term2) < 0) {
             this.term1 = term1;
             this.term2 = term2;
@@ -17,14 +17,15 @@ public class Biterm implements Comparable<Biterm> {
             this.term1 = term2;
             this.term2 = term1;
         }
-        this.canonicalRepresentation = createCanonicalRepresentation(this.term1, this.term2);
+        this.stringRepresentation = createStringRepresentation(this.term1, this.term2);
     }
 
     /**
-     * Creates the canonical string representation for a biterm, e.g., "create" + "Request" -> "createRequest".
+     * Creates the canonical string representation, e.g., "flight" and "pattern" becomes "flightPattern".
      */
-    private static String createCanonicalRepresentation(String t1, String t2) {
+    private static String createStringRepresentation(String t1, String t2) {
         if (t2 == null || t2.isEmpty()) return t1;
+        if (t1 == null || t1.isEmpty()) return t2;
         char[] chars = t2.toCharArray();
         chars[0] = Character.toUpperCase(chars[0]);
         return t1 + new String(chars);
@@ -37,25 +38,18 @@ public class Biterm implements Comparable<Biterm> {
     public void incrementWeight(int amount) { this.weight += amount; }
 
     @Override
-    public String toString() {
-        return this.canonicalRepresentation;
-    }
+    public String toString() { return this.stringRepresentation; }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Biterm)) return false;
-        Biterm biterm = (Biterm) o;
-        return canonicalRepresentation.equals(biterm.canonicalRepresentation);
+        if (!(o instanceof Biterm biterm)) return false;
+        return stringRepresentation.equals(biterm.stringRepresentation);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(canonicalRepresentation);
-    }
+    public int hashCode() { return Objects.hash(stringRepresentation); }
 
     @Override
-    public int compareTo(Biterm o) {
-        return this.canonicalRepresentation.compareTo(o.canonicalRepresentation);
-    }
+    public int compareTo(Biterm o) { return this.stringRepresentation.compareTo(o.stringRepresentation); }
 }
