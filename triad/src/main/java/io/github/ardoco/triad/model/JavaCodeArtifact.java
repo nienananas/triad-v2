@@ -9,19 +9,19 @@ import org.treesitter.TSParser;
 import org.treesitter.TSTree;
 import org.treesitter.TreeSitterJava;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SourceCodeArtifact extends Artifact {
+public class JavaCodeArtifact extends Artifact {
 
-    private static final Logger logger = LoggerFactory.getLogger(SourceCodeArtifact.class);
+    private static final Logger logger = LoggerFactory.getLogger(JavaCodeArtifact.class);
 
     private static final TSParser parser = new TSParser();
     private static final TSLanguage javaLanguage = new TreeSitterJava();
@@ -30,17 +30,17 @@ public class SourceCodeArtifact extends Artifact {
         parser.setLanguage(javaLanguage);
     }
 
-    public SourceCodeArtifact(String identifier, String textBody) {
+    public JavaCodeArtifact(String identifier, String textBody) {
         super(identifier, textBody);
     }
 
-    public SourceCodeArtifact(SourceCodeArtifact other) {
+    public JavaCodeArtifact(JavaCodeArtifact other) {
         super(other);
     }
 
     @Override
     public Artifact deepCopy() {
-        return new SourceCodeArtifact(this);
+        return new JavaCodeArtifact(this);
     }
 
     @Override
@@ -222,7 +222,7 @@ public class SourceCodeArtifact extends Artifact {
 
     private TSNode findChildNodeByTypeRecursive(TSNode parent, String type) {
         if (parent == null) return null;
-        Queue<TSNode> queue = new LinkedList<>();
+        Deque<TSNode> queue = new ArrayDeque<>();
         queue.add(parent);
 
         while (!queue.isEmpty()) {

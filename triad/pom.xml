@@ -42,6 +42,11 @@
       <artifactId>tree-sitter-java</artifactId>
       <version>0.21.0a</version>
     </dependency>
+    <dependency>
+      <groupId>io.github.bonede</groupId>
+      <artifactId>tree-sitter-c</artifactId>
+      <version>0.23.2</version>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.commons</groupId>

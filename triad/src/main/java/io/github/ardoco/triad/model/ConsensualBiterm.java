@@ -20,9 +20,8 @@ public class ConsensualBiterm extends Biterm {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ConsensualBiterm that)) return false;
         if (!super.equals(o)) return false;
-        ConsensualBiterm that = (ConsensualBiterm) o;
         return source.equals(that.source) && destination.equals(that.destination);
     }
 

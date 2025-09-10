@@ -157,6 +157,12 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>io.github.bonede</groupId>
+      <artifactId>tree-sitter-c</artifactId>
+      <version>0.23.2</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-math3</artifactId>
       <version>3.6.1</version>

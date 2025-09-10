@@ -31,6 +31,22 @@
         "type": "JAVA_CODE"
       },
       "goldStandardPath": "Dronology/gold_standard/req-code.txt"
+    },
+    {
+      "name": "LibEST",
+      "source": {
+        "path": "libest/requirements",
+        "type": "TEXTUAL"
+      },
+      "intermediate": {
+        "path": "libest/test",
+        "type": "C_CODE"
+      },
+      "target": {
+        "path": "libest/source_code",
+        "type": "C_CODE"
+      },
+      "goldStandardPath": "LibEST/gold_standard/req-code.txt"
     }
   ]
 }
