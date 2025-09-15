@@ -34,7 +34,6 @@ class LibESTBitermExtractionTest {
         String rawText = "If the enrollment is successful, the server response MUST contain an HTTP 200 response code " +
                          "with a content-type of \"application/pkcs7-mime\".";
 
-        // Corrected expectation after fixing the pre-processing pipeline for snake_case and hyphens in text.
         Map<String, Integer> expectedBiterms = Map.of(
             "codeRespons", 2, "containRespons", 2, "responsServer", 2, "containSuccess", 2,
             "enrolSuccess", 2
@@ -61,7 +60,7 @@ class LibESTBitermExtractionTest {
                          "    }\n" +
                          "}";
 
-        // Ground truth from original TRIAD output, reflecting correct pointer handling
+        // Ground truth from original TRIAD output
         Map<String, Integer> expectedBiterms = Map.ofEntries(
             Map.entry("certClient", 2), Map.entry("certEst", 2), Map.entry("certKey", 2),
             Map.entry("certSet", 2), Map.entry("certifCtx", 1), Map.entry("certifPrivat", 2),

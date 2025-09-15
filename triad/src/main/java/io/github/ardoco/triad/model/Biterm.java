@@ -9,14 +9,8 @@ public class Biterm implements Comparable<Biterm> {
     private int weight = 1;
 
     public Biterm(String term1, String term2) {
-        // Ensure a canonical representation by sorting terms alphabetically.
-        if (term1.compareTo(term2) < 0) {
-            this.term1 = term1;
-            this.term2 = term2;
-        } else {
-            this.term1 = term2;
-            this.term2 = term1;
-        }
+        this.term1 = term1;
+        this.term2 = term2;
         this.stringRepresentation = createStringRepresentation(this.term1, this.term2);
     }
 

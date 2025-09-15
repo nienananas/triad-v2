@@ -20,6 +20,13 @@ public class Project {
     public Project(ProjectConfig config) {
         this.config = config;
     }
+    
+    /**
+     * Provides subclasses with access to the project configuration.
+     */
+    protected ProjectConfig getConfig() {
+        return this.config;
+    }
 
     public Set<Artifact> getSourceArtifacts() throws IOException {
         return loadArtifacts(config.getSource());
@@ -37,7 +44,7 @@ public class Project {
         return loadArtifacts(config.getTarget());
     }
 
-    private Set<Artifact> loadArtifacts(ArtifactConfig artifactConfig) throws IOException {
+    protected Set<Artifact> loadArtifacts(ArtifactConfig artifactConfig) throws IOException {
         if (artifactConfig == null) {
             return java.util.Collections.emptySet();
         }

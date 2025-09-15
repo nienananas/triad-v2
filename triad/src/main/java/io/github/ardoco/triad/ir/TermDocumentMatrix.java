@@ -21,40 +21,35 @@ public class TermDocumentMatrix {
         Collections.sort(this.docNames);
 
         Set<String> uniqueTerms = new HashSet<>();
+        Map<String, Map<String, Integer>> termFrequenciesPerDoc = new HashMap<>();
+
         for (Artifact artifact : artifacts.values()) {
-            for (Biterm biterm : artifact.getBiterms()) {
-                uniqueTerms.add(biterm.toString());
+            Map<String, Integer> termFrequencies = new HashMap<>();
+            String[] terms = artifact.getTextBody().split("\\s+");
+            for (String term : terms) {
+                if (!term.isBlank()) {
+                    uniqueTerms.add(term);
+                    termFrequencies.merge(term, 1, Integer::sum);
+                }
             }
+            termFrequenciesPerDoc.put(artifact.getIdentifier(), termFrequencies);
         }
+
         this.termNames = new ArrayList<>(uniqueTerms);
         Collections.sort(this.termNames);
 
         this.matrix = new double[docNames.size()][termNames.size()];
-
-        Map<String, Integer> docIndexMap = new HashMap<>();
-        for (int i = 0; i < docNames.size(); i++) {
-            docIndexMap.put(docNames.get(i), i);
-        }
-
         Map<String, Integer> termIndexMap = new HashMap<>();
         for (int i = 0; i < termNames.size(); i++) {
             termIndexMap.put(termNames.get(i), i);
         }
 
-        for (Map.Entry<String, Artifact> entry : artifacts.entrySet()) {
-            String docName = entry.getKey();
-            Artifact artifact = entry.getValue();
-            int docIndex = docIndexMap.get(docName);
-
-            Map<String, Long> termFrequencies = new HashMap<>();
-            for (Biterm biterm : artifact.getBiterms()) {
-                termFrequencies.merge(biterm.toString(), (long) biterm.getWeight(), Long::sum);
-            }
-
-            for (Map.Entry<String, Long> termEntry : termFrequencies.entrySet()) {
-                String termName = termEntry.getKey();
-                int termIndex = termIndexMap.get(termName);
-                matrix[docIndex][termIndex] = termEntry.getValue();
+        for (int i = 0; i < docNames.size(); i++) {
+            String docName = docNames.get(i);
+            Map<String, Integer> freqs = termFrequenciesPerDoc.get(docName);
+            for (Map.Entry<String, Integer> entry : freqs.entrySet()) {
+                int termIndex = termIndexMap.get(entry.getKey());
+                matrix[i][termIndex] = entry.getValue();
             }
         }
     }

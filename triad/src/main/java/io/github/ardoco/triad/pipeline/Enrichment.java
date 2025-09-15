@@ -34,11 +34,11 @@ public class Enrichment {
         Map<String, Map<String, Integer>> intermediateBitermMap =
                 EnrichmentUtils.getBitermFrequencyMap(project.getIntermediateArtifacts());
 
-        Map<String, Map<String, Double>> srcEnrichBiterms =
+        Map<String, Map<String, Integer>> srcEnrichBiterms =
                 EnrichmentUtils.selectNeighborConsensualBiterms(project.getSourceArtifacts(), intermediateBitermMap, sourceToIntermediateSim);
         EnrichmentUtils.debugEnrichmentStats("SRC+", project.getSourceArtifacts(), srcEnrichBiterms);
 
-        Map<String, Map<String, Double>> tgtEnrichBiterms =
+        Map<String, Map<String, Integer>> tgtEnrichBiterms =
                 EnrichmentUtils.selectNeighborConsensualBiterms(project.getTargetArtifacts(), intermediateBitermMap, targetToIntermediateSim);
         EnrichmentUtils.debugEnrichmentStats("TGT+", project.getTargetArtifacts(), tgtEnrichBiterms);
 
@@ -48,6 +48,6 @@ public class Enrichment {
         SimilarityMatrix s1 = irModel.Compute(extendedSources, new ArtifactsCollection(project.getTargetArtifacts()));
         SimilarityMatrix s2 = irModel.Compute(new ArtifactsCollection(project.getSourceArtifacts()), extendedTargets);
 
-        return EnrichmentUtils.elementwiseMax(s1, s2);
+        return EnrichmentUtils.elementwiseAverage(s1, s2);
     }
 }

@@ -11,6 +11,7 @@ import io.github.ardoco.triad.ir.LSI;
 import io.github.ardoco.triad.ir.SimilarityMatrix;
 import io.github.ardoco.triad.ir.VSM;
 import io.github.ardoco.triad.model.Project;
+import io.github.ardoco.triad.model.PreprocessedProject;
 import io.github.ardoco.triad.pipeline.TriadPipeline;
 import io.github.ardoco.triad.util.OutputLog;
 import org.slf4j.Logger;
@@ -33,7 +34,13 @@ public class App {
         Config config = mapper.readValue(new File("config.json"), Config.class);
 
         for (ProjectConfig projectConfig : config.getProjects()) {
-            Project project = new Project(projectConfig);
+            Project project;
+            if ("Dronology-Original-Preproc".equals(projectConfig.getName())) {
+                project = new PreprocessedProject(projectConfig);
+                logger.warn("Using special PreprocessedProject loader for '{}'", projectConfig.getName());
+            } else {
+                project = new Project(projectConfig);
+            }
             logger.info("================================================================================");
             logger.info("STARTING ANALYSIS FOR PROJECT: {}", project.getName());
             logger.info("================================================================================");

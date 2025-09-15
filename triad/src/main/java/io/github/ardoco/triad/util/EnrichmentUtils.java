@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,14 +61,14 @@ public final class EnrichmentUtils {
         return artifactBitermMap;
     }
 
-    public static Map<String, Map<String, Double>> selectNeighborConsensualBiterms(Set<Artifact> artifacts,
+    public static Map<String, Map<String, Integer>> selectNeighborConsensualBiterms(Set<Artifact> artifacts,
                                                                                    Map<String, Map<String, Integer>> neighborBitermMap,
                                                                                    SimilarityMatrix rowSimMatrix) {
-        Map<String, Map<String, Double>> out = new HashMap<>();
+        Map<String, Map<String, Integer>> out = new HashMap<>();
         for (Artifact a : artifacts) {
             String aid = a.getIdentifier();
             LinksList neighbors = rowSimMatrix.getLinks(aid);
-            Map<String, Double> counts = new HashMap<>();
+            Map<String, Integer> counts = new HashMap<>();
             if (neighbors != null && !neighbors.isEmpty()) {
                 double rowMax = neighbors.stream().mapToDouble(SingleLink::getScore).max().orElse(0.0);
                 double thr = rowMax * M_ENRICH;
@@ -79,12 +80,8 @@ public final class EnrichmentUtils {
 
                 for (SingleLink n : top) {
                     Map<String, Integer> nb = neighborBitermMap.getOrDefault(n.getTargetArtifactId(), Map.of());
-                    double vote = (rowMax > 0.0) ? (n.getScore() / rowMax) : 0.0;
                     for (Map.Entry<String,Integer> e : nb.entrySet()) {
-                        String b = e.getKey();
-                        int freq = e.getValue();
-                        double weight = vote * Math.log(1.0 + freq);
-                        counts.merge(b, weight, Double::sum);
+                        counts.merge(e.getKey(), e.getValue(), Integer::sum);
                     }
                 }
             }
@@ -94,7 +91,7 @@ public final class EnrichmentUtils {
     }
 
     public static ArtifactsCollection createExtendedCollection(Set<Artifact> originals,
-                                                               Map<String, Map<String, Double>> bitermScores,
+                                                               Map<String, Map<String, Integer>> bitermFrequencies,
                                                                String tagForLogs) {
         ArtifactsCollection col = new ArtifactsCollection();
         long totalAppended = 0;
@@ -104,19 +101,19 @@ public final class EnrichmentUtils {
             String base = orig.getTextBody();
             StringBuilder sb = new StringBuilder(base).append('\n');
 
-            Map<String, Double> scoreMap = bitermScores.getOrDefault(orig.getIdentifier(), Map.of());
+            Map<String, Integer> freqMap = bitermFrequencies.getOrDefault(orig.getIdentifier(), Map.of());
 
-            List<Map.Entry<String, Double>> topBiterms = scoreMap.entrySet().stream()
-                    .filter(e -> e.getValue() >= (double)MIN_AGREEMENTS - 1e-9)
-                    .sorted((a,b) -> Double.compare(b.getValue(), a.getValue()))
+            List<Map.Entry<String, Integer>> topBiterms = freqMap.entrySet().stream()
+                    .filter(e -> e.getValue() >= MIN_AGREEMENTS)
+                    .sorted((a,b) -> Integer.compare(b.getValue(), a.getValue()))
                     .limit(MAX_BITERMS_PER_DOC)
                     .collect(Collectors.toList());
 
             int appendedThis = 0;
             int keptThis = 0;
-            for (Map.Entry<String, Double> e : topBiterms) {
+            for (Map.Entry<String, Integer> e : topBiterms) {
                 String biterm = e.getKey();
-                int reps = Math.min((int)Math.round(e.getValue()), MAX_REP_PER_BITERM);
+                int reps = Math.min(e.getValue(), MAX_REP_PER_BITERM);
                 if (reps <= 0) continue;
                 String[] two = normalizeBiterm(biterm);
                 if (two == null) continue;
@@ -158,15 +155,45 @@ public final class EnrichmentUtils {
         return new String[]{tokens.get(0), tokens.get(1)};
     }
 
-    public static void debugEnrichmentStats(String tag, Set<Artifact> arts, Map<String, Map<String,Double>> bitermMap) {
+    public static void debugEnrichmentStats(String tag, Set<Artifact> arts, Map<String, Map<String, Integer>> bitermMap) {
         int shown = 0;
         for (Artifact a : arts) {
             var m = bitermMap.getOrDefault(a.getIdentifier(), Map.of());
-            double added = m.values().stream().mapToDouble(Double::doubleValue).sum();
+            long added = m.values().stream().mapToLong(Integer::intValue).sum();
             if (shown < 5 && added > 0) {
-                logger.info("[ENRICH] {} {} consensual_biterms={}", tag, a.getIdentifier(), Math.round(added));
+                logger.info("[ENRICH] {} {} consensual_biterms={}", tag, a.getIdentifier(), added);
                 shown++;
             }
         }
+    }
+
+    /**
+     * Fuses two similarity matrices by taking the element-wise average of their scores.
+     * This method mirrors the fusion strategy of the original TRIAD implementation.
+     *
+     * @param a The first similarity matrix.
+     * @param b The second similarity matrix.
+     * @return A new similarity matrix containing the averaged scores.
+     */
+    public static SimilarityMatrix elementwiseAverage(SimilarityMatrix a, SimilarityMatrix b) {
+        SimilarityMatrix fused = new SimilarityMatrix();
+        Set<String> allSources = new HashSet<>(a.getSourceArtifacts());
+        allSources.addAll(b.getSourceArtifacts());
+
+        Set<String> allTargets = new HashSet<>(a.getTargetArtifacts());
+        allTargets.addAll(b.getTargetArtifacts());
+
+        for (String s : allSources) {
+            for (String t : allTargets) {
+                double scoreA = a.getScore(s, t);
+                double scoreB = b.getScore(s, t);
+                double avgScore = (scoreA + scoreB) / 2.0;
+
+                if (avgScore > 0) {
+                    fused.addLink(s, t, avgScore);
+                }
+            }
+        }
+        return fused;
     }
 }

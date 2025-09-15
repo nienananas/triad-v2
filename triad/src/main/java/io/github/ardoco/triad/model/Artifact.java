@@ -165,8 +165,8 @@ public abstract class Artifact {
             if (deps == null) continue;
 
             for (SemanticGraphEdge edge : deps.edgeListSorted()) {
-                String govWord = TextProcessor.processTermOriginal(edge.getGovernor().originalText());
-                String depWord = TextProcessor.processTermOriginal(edge.getDependent().originalText());
+                String govWord = TextProcessor.processWord(edge.getGovernor().originalText());
+                String depWord = TextProcessor.processWord(edge.getDependent().originalText());
                 String relation = edge.getRelation().toString();
 
                 if (!govWord.isEmpty() && !depWord.isEmpty()) {
@@ -211,8 +211,8 @@ public abstract class Artifact {
             for (SemanticGraphEdge edge : deps.edgeListSorted()) {
                 String rel = edge.getRelation().toString();
                 if (rel.equals("compound") || rel.equals("amod")) {
-                    String head = TextProcessor.processTermOriginal(edge.getGovernor().originalText());
-                    String mod  = TextProcessor.processTermOriginal(edge.getDependent().originalText());
+                    String head = TextProcessor.processWord(edge.getGovernor().originalText());
+                    String mod  = TextProcessor.processWord(edge.getDependent().originalText());
                     if (!head.isEmpty() && !mod.isEmpty() && !head.equals(mod)) {
                         headModifiers.computeIfAbsent(head, k -> new LinkedHashSet<>()).add(mod);
                     }
@@ -245,8 +245,8 @@ public abstract class Artifact {
 
                 if (!isContentPOS(govPos) || !isContentPOS(depPos)) continue;
 
-                String processedGov = TextProcessor.processTermOriginal(govWord);
-                String processedDep = TextProcessor.processTermOriginal(depWord);
+                String processedGov = TextProcessor.processWord(govWord);
+                String processedDep = TextProcessor.processWord(depWord);
                 if (processedGov.isEmpty() || processedDep.isEmpty() || processedGov.equals(processedDep)) continue;
 
                 // Heuristic: Special handling for "context" to reduce noise.
@@ -278,15 +278,15 @@ public abstract class Artifact {
                 
                 // Heuristic: Allow specific prepositional relations.
                 if (rel.startsWith("nmod:for") || rel.startsWith("obl:for")) {
-                    String govLemma = TextProcessor.processTermOriginal(edge.getGovernor().originalText());
+                    String govLemma = TextProcessor.processWord(edge.getGovernor().originalText());
                     allowed = "use".equals(govLemma);
                 }
                 if (rel.startsWith("nmod:to") || rel.startsWith("obl:to")) {
-                    String govLemma = TextProcessor.processTermOriginal(edge.getGovernor().originalText());
+                    String govLemma = TextProcessor.processWord(edge.getGovernor().originalText());
                     allowed = "set".equals(govLemma);
                 }
                 if (rel.equals("nsubj")) {
-                    String govLemma = TextProcessor.processTermOriginal(edge.getGovernor().originalText());
+                    String govLemma = TextProcessor.processWord(edge.getGovernor().originalText());
                     allowed = "set".equals(govLemma);
                 }
                 
