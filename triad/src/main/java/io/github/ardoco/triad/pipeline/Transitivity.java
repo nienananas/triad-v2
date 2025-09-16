@@ -17,17 +17,12 @@ public class Transitivity {
 
     // --- Tunable Parameters ---
     private static final int T_HOP1 = 3;
-    private static final int T_HOP2 = T_HOP1 - 1; // 2
-    private static final int T_HOP3 = T_HOP1 - 2; // 1
-
     private static final double M_HOP1 = 0.5;
-    private static final double M_HOP2 = M_HOP1 + 0.1; // 0.6
-    private static final double M_HOP3 = M_HOP1 + 0.2; // 0.7
 
     public Transitivity(SimilarityMatrix sourceIntermediateSimilarity,
-                        SimilarityMatrix intermediateTargetSimilarity,
-                        SimilarityMatrix sourceSourceSimilarity,
-                        SimilarityMatrix intermediateIntermediateSimilarity) {
+                       SimilarityMatrix intermediateTargetSimilarity,
+                       SimilarityMatrix sourceSourceSimilarity,
+                       SimilarityMatrix intermediateIntermediateSimilarity) {
         this.sourceIntermediateSimilarity = sourceIntermediateSimilarity;
         this.intermediateTargetSimilarity = intermediateTargetSimilarity;
         this.sourceSourceSimilarity = sourceSourceSimilarity;
@@ -36,17 +31,20 @@ public class Transitivity {
 
     public SimilarityMatrix applyTransitivity(SimilarityMatrix baseMatrix) {
         SimilarityMatrix adjustedMatrix = baseMatrix.deepCopy();
-        Set<String> allSources = baseMatrix.getSourceArtifacts();
-        Set<String> allTargets = baseMatrix.getTargetArtifacts();
+        
+        // Get all possible sources and targets from the similarity matrices
+        Set<String> allSources = this.sourceIntermediateSimilarity.getSourceArtifacts();
+        Set<String> allTargets = this.intermediateTargetSimilarity.getTargetArtifacts();
 
         for (String source : allSources) {
             for (String target : allTargets) {
                 double currentScore = baseMatrix.getScore(source, target);
-                double bonus = calculateTransitiveBonus(source, target);
+                double transitiveScore = calculateBestTransitivePath(source, target);
 
-                if (bonus > 0) {
-                    double boosted = currentScore * (1.0 + bonus);
-                    double newScore = Math.min(Math.max(currentScore, boosted), 0.9999);
+                // Use conservative fusion: take maximum of current and transitive scores
+                // This ensures we don't degrade existing good scores
+                if (transitiveScore > 0) {
+                    double newScore = Math.max(currentScore, transitiveScore);
                     adjustedMatrix.setScore(source, target, newScore);
                 }
             }
@@ -54,56 +52,30 @@ public class Transitivity {
         return adjustedMatrix;
     }
 
-    private double calculateTransitiveBonus(String source, String target) {
-        double bonus = 0.0;
+    /**
+     * Calculate the best transitive path score from source to target.
+     * Uses the simple and reliable outer transitivity: source -> intermediate -> target.
+     */
+    private double calculateBestTransitivePath(String source, String target) {
+        double bestScore = 0.0;
 
-        // --- Outer Transitivity: s -> m -> t ---
-        List<SingleLink> s_m_links = getTopLinks(this.sourceIntermediateSimilarity, source, T_HOP1, M_HOP1);
-        for (SingleLink smLink : s_m_links) {
-            String middle = smLink.getTargetArtifactId();
-            List<SingleLink> m_t_links = getTopLinks(this.intermediateTargetSimilarity, middle, T_HOP2, M_HOP2);
-            for (SingleLink mtLink : m_t_links) {
+        // Simple outer transitivity: s -> m -> t
+        List<SingleLink> sourceToIntermediate = getTopLinks(this.sourceIntermediateSimilarity, source, T_HOP1, M_HOP1);
+        
+        for (SingleLink smLink : sourceToIntermediate) {
+            String intermediate = smLink.getTargetArtifactId();
+            List<SingleLink> intermediateToTarget = getTopLinks(this.intermediateTargetSimilarity, intermediate, T_HOP1, M_HOP1);
+            
+            for (SingleLink mtLink : intermediateToTarget) {
                 if (mtLink.getTargetArtifactId().equals(target)) {
-                    bonus += smLink.getScore() * mtLink.getScore();
+                    // Conservative transitive score calculation
+                    double transitiveScore = smLink.getScore() * mtLink.getScore();
+                    bestScore = Math.max(bestScore, transitiveScore);
                 }
             }
         }
-
-        // --- Inner Transitivity (Source-side): s -> s' -> m -> t ---
-        List<SingleLink> s_s_links = getTopLinks(this.sourceSourceSimilarity, source, T_HOP1, M_HOP1);
-        for (SingleLink ssLink : s_s_links) {
-            String sPrime = ssLink.getTargetArtifactId();
-            if (sPrime.equals(source)) continue;
-
-            List<SingleLink> sp_m_links = getTopLinks(this.sourceIntermediateSimilarity, sPrime, T_HOP2, M_HOP2);
-            for (SingleLink spmLink : sp_m_links) {
-                String middle = spmLink.getTargetArtifactId();
-                List<SingleLink> m_t_links = getTopLinks(this.intermediateTargetSimilarity, middle, T_HOP3, M_HOP3);
-                 for (SingleLink mtLink : m_t_links) {
-                    if (mtLink.getTargetArtifactId().equals(target)) {
-                       bonus += ssLink.getScore() * spmLink.getScore() * mtLink.getScore();
-                    }
-                }
-            }
-        }
-
-        // --- Inner Transitivity (Middle-side): s -> m -> m' -> t ---
-        for (SingleLink smLink : s_m_links) {
-            String middle = smLink.getTargetArtifactId();
-            List<SingleLink> m_m_links = getTopLinks(this.intermediateIntermediateSimilarity, middle, T_HOP2, M_HOP2);
-            for (SingleLink mmLink : m_m_links) {
-                String mPrime = mmLink.getTargetArtifactId();
-                if (mPrime.equals(middle)) continue;
-
-                List<SingleLink> mp_t_links = getTopLinks(this.intermediateTargetSimilarity, mPrime, T_HOP3, M_HOP3);
-                for (SingleLink mptLink : mp_t_links) {
-                   if (mptLink.getTargetArtifactId().equals(target)) {
-                       bonus += smLink.getScore() * mmLink.getScore() * mptLink.getScore();
-                   }
-                }
-            }
-        }
-        return bonus;
+        
+        return bestScore;
     }
 
     private List<SingleLink> getTopLinks(SimilarityMatrix matrix, String sourceId, int topK, double m) {

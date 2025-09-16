@@ -42,7 +42,7 @@ public class TriadPipeline {
                     unionSourceTargetSim, unionTargetSourceSim);
             SimilarityMatrix tarotSTMatrix = tarot.enrichAndFuse();
 
-            SimilarityMatrix fusedMatrix = fuseConservativeMax(irOnlyBaseMatrix, tarotSTMatrix);
+            SimilarityMatrix fusedMatrix = fuseAverage(irOnlyBaseMatrix, tarotSTMatrix);
             logger.info("TAROT-ONLY pipeline finished.");
             return fusedMatrix;
         }
@@ -64,14 +64,22 @@ public class TriadPipeline {
         SimilarityMatrix tarotSTMatrix = enrichment.enrichAndFuse();
         logger.info("Enrichment phase complete.");
 
-        SimilarityMatrix fusedMatrix = fuseConservativeMax(irOnlyBaseMatrix, tarotSTMatrix);
+        SimilarityMatrix fusedMatrix = fuseAverage(irOnlyBaseMatrix, tarotSTMatrix);
         logger.info("Fused IR-ONLY baseline and enriched matrix.");
 
-        var transitivity = new Transitivity(unionSourceIntermediateSim, unionIntermediateTargetSim,
-                unionSourceSourceSim, unionIntermediateIntermediateSim);
-        SimilarityMatrix finalMatrix = transitivity.applyTransitivity(fusedMatrix);
-        logger.info("TRIAD pipeline finished.");
-        return finalMatrix;
+        // Check if transitivity should be applied (can be disabled for testing)
+        boolean applyTransitivity = Boolean.parseBoolean(System.getProperty("triad.transitivity.enabled", "true"));
+        
+        if (applyTransitivity) {
+            var transitivity = new Transitivity(unionSourceIntermediateSim, unionIntermediateTargetSim,
+                    unionSourceSourceSim, unionIntermediateIntermediateSim);
+            SimilarityMatrix finalMatrix = transitivity.applyTransitivity(fusedMatrix);
+            logger.info("TRIAD pipeline finished with transitivity.");
+            return finalMatrix;
+        } else {
+            logger.info("TRIAD pipeline finished without transitivity (disabled for testing).");
+            return fusedMatrix;
+        }
     }
 
     public SimilarityMatrix runIrOnly() throws IOException {
@@ -87,6 +95,22 @@ public class TriadPipeline {
                 double baseScore = base.getScore(s, t);
                 double enrichedScore = enriched.getScore(s, t);
                 fused.setScore(s, t, Math.max(baseScore, enrichedScore));
+            }
+        }
+        return fused;
+    }
+
+    /**
+     * Fuses two similarity matrices by averaging their scores, matching the original TRIAD implementation.
+     * This is the fusion strategy used in the original TRIAD paper: 0.5 * (score1 + score2).
+     */
+    private static SimilarityMatrix fuseAverage(SimilarityMatrix base, SimilarityMatrix enriched) {
+        SimilarityMatrix fused = base.deepCopy();
+        for (String s : base.getSourceArtifacts()) {
+            for (String t : base.getTargetArtifacts()) {
+                double baseScore = base.getScore(s, t);
+                double enrichedScore = enriched.getScore(s, t);
+                fused.setScore(s, t, 0.5 * (baseScore + enrichedScore));
             }
         }
         return fused;

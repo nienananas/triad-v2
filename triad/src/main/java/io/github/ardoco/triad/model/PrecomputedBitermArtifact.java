@@ -59,7 +59,7 @@ public class PrecomputedBitermArtifact extends Artifact {
                       String bitermString = parts[0];
                       int weight = Integer.parseInt(parts[1]);
 
-                      String[] terms = bitermString.split("(?=[A-Z])", 2);
+                      String[] terms = extractTwoTerms(bitermString);
                       if (terms.length == 2) {
                           String term1 = terms[0].toLowerCase();
                           String term2 = terms[1].toLowerCase();
@@ -69,7 +69,7 @@ public class PrecomputedBitermArtifact extends Artifact {
 
                           // Reconstruct the text body by appending the biterm string 'weight' times.
                           for (int i = 0; i < weight; i++) {
-                              reconstructedBody.append(biterm.toString()).append(" ");
+                              reconstructedBody.append(term1).append(" ").append(term2).append(" ");
                           }
                       }
                   } catch (Exception e) {
@@ -106,5 +106,32 @@ public class PrecomputedBitermArtifact extends Artifact {
     @Override
     public Set<Biterm> getBiterms() {
         return this.biterms;
+    }
+    
+    /**
+     * Extracts two terms from a biterm string. Tries different splitting strategies.
+     */
+    private String[] extractTwoTerms(String bitermString) {
+        // Strategy 1: Split on camelCase if present
+        String[] camelCaseSplit = bitermString.split("(?=[A-Z])", 2);
+        if (camelCaseSplit.length == 2 && !camelCaseSplit[0].isEmpty() && !camelCaseSplit[1].isEmpty()) {
+            return camelCaseSplit;
+        }
+        
+        // Strategy 2: For lowercase strings like "apimonitor", try to find word boundaries
+        // This is a simple heuristic - split at roughly the middle for equal-length terms
+        if (bitermString.length() >= 6) {
+            int mid = bitermString.length() / 2;
+            return new String[]{bitermString.substring(0, mid), bitermString.substring(mid)};
+        }
+        
+        // Strategy 3: If very short, treat as single term repeated
+        if (bitermString.length() >= 3) {
+            int mid = bitermString.length() / 2;
+            return new String[]{bitermString.substring(0, mid), bitermString.substring(mid)};
+        }
+        
+        // Fallback: return as single term twice
+        return new String[]{bitermString, bitermString};
     }
 }

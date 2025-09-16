@@ -39,22 +39,23 @@ public final class EnrichmentUtils {
         catch (Exception e) { return defVal; }
     }
 
-    private static final double M_ENRICH = propDouble("triad.enrich.m", 0.5);
-    private static final int TOP_K_ENRICH = propInt("triad.enrich.topk", 3);
-    private static final int MAX_REP_PER_BITERM = propInt("triad.enrich.maxrep", 4);
-    private static final int MIN_AGREEMENTS = propInt("triad.enrich.minAgree", 2);
-    private static final int MAX_BITERMS_PER_DOC = propInt("triad.enrich.maxBiterms", 24);
+    private static final double M_ENRICH = propDouble("triad.enrich.m", 0.01);  // Extremely aggressive threshold  
+    private static final int TOP_K_ENRICH = propInt("triad.enrich.topk", 100); // Maximum neighbors
+    private static final int MAX_REP_PER_BITERM = propInt("triad.enrich.maxrep", 999);
+    private static final int MIN_AGREEMENTS = propInt("triad.enrich.minAgree", 1);
+    private static final int MAX_BITERMS_PER_DOC = propInt("triad.enrich.maxBiterms", 100000);
 
     public static Map<String, Map<String, Integer>> getBitermFrequencyMap(Set<Artifact> artifacts) {
         Map<String, Map<String, Integer>> artifactBitermMap = new HashMap<>();
         for (Artifact artifact : artifacts) {
             Map<String, Integer> freqMap = new HashMap<>();
-            for (Biterm biterm : artifact.getBiterms()) {
-                String[] two = normalizeBiterm(biterm.toString());
-                if (two != null) {
-                    String key = two[0] + " " + two[1];
-                    freqMap.merge(key, biterm.getWeight(), Integer::sum);
-                }
+            Set<Biterm> biterms = artifact.getBiterms();
+            for (Biterm biterm : biterms) {
+                // Use the individual terms directly instead of toString() to avoid normalization issues
+                String term1 = biterm.getFirstTerm().toLowerCase();
+                String term2 = biterm.getSecondTerm().toLowerCase();
+                String key = term1 + " " + term2;
+                freqMap.merge(key, biterm.getWeight(), Integer::sum);
             }
             artifactBitermMap.put(artifact.getIdentifier(), freqMap);
         }
@@ -78,10 +79,12 @@ public final class EnrichmentUtils {
                         .limit(TOP_K_ENRICH)
                         .toList();
 
+                // Match original implementation: add ALL biterms from each neighbor with frequency 1
                 for (SingleLink n : top) {
                     Map<String, Integer> nb = neighborBitermMap.getOrDefault(n.getTargetArtifactId(), Map.of());
-                    for (Map.Entry<String,Integer> e : nb.entrySet()) {
-                        counts.merge(e.getKey(), e.getValue(), Integer::sum);
+                    for (String bitermKey : nb.keySet()) {
+                        // Original adds each biterm once per neighbor (not accumulated frequencies)
+                        counts.merge(bitermKey, 1, Integer::sum);
                     }
                 }
             }
@@ -102,9 +105,8 @@ public final class EnrichmentUtils {
             StringBuilder sb = new StringBuilder(base).append('\n');
 
             Map<String, Integer> freqMap = bitermFrequencies.getOrDefault(orig.getIdentifier(), Map.of());
-
+            
             List<Map.Entry<String, Integer>> topBiterms = freqMap.entrySet().stream()
-                    .filter(e -> e.getValue() >= MIN_AGREEMENTS)
                     .sorted((a,b) -> Integer.compare(b.getValue(), a.getValue()))
                     .limit(MAX_BITERMS_PER_DOC)
                     .collect(Collectors.toList());

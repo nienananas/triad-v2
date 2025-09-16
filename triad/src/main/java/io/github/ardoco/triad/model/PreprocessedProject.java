@@ -117,11 +117,12 @@ public class PreprocessedProject extends Project {
 
                     try {
                         String bitermFileContent = Files.readString(bitermFilePath);
-                        String bitermAppendText = generateTextFromBiterms(bitermFileContent);
                         
-                        originalArtifact.textBody = originalArtifact.getTextBody() + " " + bitermAppendText;
+                        // Use PrecomputedBitermArtifact to directly load biterms like original TRIAD
+                        PrecomputedBitermArtifact precomputedArtifact = new PrecomputedBitermArtifact(
+                            identifier, bitermFileContent, originalArtifact.getType());
                         
-                        return originalArtifact;
+                        return precomputedArtifact;
                     } catch (IOException e) {
                         logger.error("Could not read biterm file: {}", bitermFilePath, e);
                         return null;
