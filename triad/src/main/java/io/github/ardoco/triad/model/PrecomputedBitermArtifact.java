@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.model;
 
 import java.util.Arrays;
@@ -51,31 +52,32 @@ public class PrecomputedBitermArtifact extends Artifact {
         }
 
         Arrays.stream(content.split("\\r?\\n"))
-              .map(String::trim)
-              .filter(line -> !line.isEmpty() && line.contains(":"))
-              .forEach(line -> {
-                  try {
-                      String[] parts = line.split(":", 2);
-                      String bitermString = parts[0];
-                      int weight = Integer.parseInt(parts[1]);
+                .map(String::trim)
+                .filter(line -> !line.isEmpty() && line.contains(":"))
+                .forEach(line -> {
+                    try {
+                        String[] parts = line.split(":", 2);
+                        String bitermString = parts[0];
+                        int weight = Integer.parseInt(parts[1]);
 
-                      String[] terms = extractTwoTerms(bitermString);
-                      if (terms.length == 2) {
-                          String term1 = terms[0].toLowerCase();
-                          String term2 = terms[1].toLowerCase();
-                          Biterm biterm = new Biterm(term1, term2);
-                          biterm.setWeight(weight);
-                          parsedBiterms.add(biterm);
+                        String[] terms = extractTwoTerms(bitermString);
+                        if (terms.length == 2) {
+                            String term1 = terms[0].toLowerCase();
+                            String term2 = terms[1].toLowerCase();
+                            Biterm biterm = new Biterm(term1, term2);
+                            biterm.setWeight(weight);
+                            parsedBiterms.add(biterm);
 
-                          // Reconstruct the text body by appending the biterm string 'weight' times.
-                          for (int i = 0; i < weight; i++) {
-                              reconstructedBody.append(term1).append(" ").append(term2).append(" ");
-                          }
-                      }
-                  } catch (Exception e) {
-                      // Malformed lines are ignored.
-                  }
-              });
+                            // Reconstruct the text body using the canonical biterm token to match standard processing
+                            String token = biterm.toString();
+                            for (int i = 0; i < weight; i++) {
+                                reconstructedBody.append(token).append(" ");
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Ignore malformed lines
+                    }
+                });
 
         // Set the reconstructed text body on the artifact.
         this.textBody = reconstructedBody.toString().trim();
@@ -98,16 +100,21 @@ public class PrecomputedBitermArtifact extends Artifact {
     }
 
     /**
-     * Returns the pre-computed set of biterms directly.
-     * This overrides the base implementation to avoid NLP/parsing logic.
+     * Returns the biterms, including any enrichment added to the text body.
+     * If the text body has been enriched, re-extract biterms from the full text.
+     * Otherwise, return the pre-computed biterms.
      *
-     * @return The cached set of biterms.
+     * @return The set of biterms including enrichment.
      */
     @Override
     public Set<Biterm> getBiterms() {
+        // If biterms cache is null (invalidated by enrichment), re-extract from text body
+        if (this.biterms == null) {
+            this.biterms = getBitermsFromText(this.textBody);
+        }
         return this.biterms;
     }
-    
+
     /**
      * Extracts two terms from a biterm string. Tries different splitting strategies.
      */
@@ -117,21 +124,21 @@ public class PrecomputedBitermArtifact extends Artifact {
         if (camelCaseSplit.length == 2 && !camelCaseSplit[0].isEmpty() && !camelCaseSplit[1].isEmpty()) {
             return camelCaseSplit;
         }
-        
+
         // Strategy 2: For lowercase strings like "apimonitor", try to find word boundaries
         // This is a simple heuristic - split at roughly the middle for equal-length terms
         if (bitermString.length() >= 6) {
             int mid = bitermString.length() / 2;
-            return new String[]{bitermString.substring(0, mid), bitermString.substring(mid)};
+            return new String[] {bitermString.substring(0, mid), bitermString.substring(mid)};
         }
-        
+
         // Strategy 3: If very short, treat as single term repeated
         if (bitermString.length() >= 3) {
             int mid = bitermString.length() / 2;
-            return new String[]{bitermString.substring(0, mid), bitermString.substring(mid)};
+            return new String[] {bitermString.substring(0, mid), bitermString.substring(mid)};
         }
-        
+
         // Fallback: return as single term twice
-        return new String[]{bitermString, bitermString};
+        return new String[] {bitermString, bitermString};
     }
 }

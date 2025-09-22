@@ -1,14 +1,16 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.pipeline;
+
+import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.github.ardoco.triad.ir.ArtifactsCollection;
 import io.github.ardoco.triad.ir.IRModel;
 import io.github.ardoco.triad.ir.IRUnion;
 import io.github.ardoco.triad.ir.SimilarityMatrix;
 import io.github.ardoco.triad.model.Project;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class TriadPipeline {
     private static final Logger logger = LoggerFactory.getLogger(TriadPipeline.class);
@@ -22,7 +24,10 @@ public class TriadPipeline {
     }
 
     public SimilarityMatrix run() throws IOException {
-        logger.info("Starting TRIAD pipeline for project '{}' with IR model '{}'", project.getName(), irModel.getModelName());
+        logger.info(
+                "Starting TRIAD pipeline for project '{}' with IR model '{}'",
+                project.getName(),
+                irModel.getModelName());
 
         ArtifactsCollection sourceCollection = new ArtifactsCollection(project.getSourceArtifacts());
         ArtifactsCollection targetCollection = new ArtifactsCollection(project.getTargetArtifacts());
@@ -38,11 +43,18 @@ public class TriadPipeline {
             SimilarityMatrix unionSourceTargetSim = IRUnion.computeUnion(sourceCollection, targetCollection);
             SimilarityMatrix unionTargetSourceSim = IRUnion.computeUnion(targetCollection, sourceCollection);
 
-            TarotOnlyEnrichment tarot = new TarotOnlyEnrichment(project, irModel,
-                    unionSourceTargetSim, unionTargetSourceSim);
+            TarotOnlyEnrichment tarot =
+                    new TarotOnlyEnrichment(project, irModel, unionSourceTargetSim, unionTargetSourceSim);
             SimilarityMatrix tarotSTMatrix = tarot.enrichAndFuse();
 
-            SimilarityMatrix fusedMatrix = fuseAverage(irOnlyBaseMatrix, tarotSTMatrix);
+            boolean guardFusion = Boolean.parseBoolean(System.getProperty("triad.fusion.guard", "false"));
+            String fusionStrategy = System.getProperty("triad.fusion.strategy", guardFusion ? "guarded_avg" : "avg");
+            SimilarityMatrix fusedMatrix =
+                    switch (fusionStrategy) {
+                        case "max" -> fuseConservativeMax(irOnlyBaseMatrix, tarotSTMatrix);
+                        case "guarded_avg" -> fuseAverageGuarded(irOnlyBaseMatrix, tarotSTMatrix);
+                        default -> fuseAverage(irOnlyBaseMatrix, tarotSTMatrix);
+                    };
             logger.info("TAROT-ONLY pipeline finished.");
             return fusedMatrix;
         }
@@ -53,26 +65,35 @@ public class TriadPipeline {
         SimilarityMatrix unionIntermediateTargetSim = IRUnion.computeUnion(intermediateCollection, targetCollection);
         SimilarityMatrix unionTargetIntermediateSim = IRUnion.computeUnion(targetCollection, intermediateCollection);
         SimilarityMatrix unionSourceSourceSim = IRUnion.computeUnion(sourceCollection, sourceCollection);
-        SimilarityMatrix unionIntermediateIntermediateSim = IRUnion.computeUnion(intermediateCollection, intermediateCollection);
+        SimilarityMatrix unionIntermediateIntermediateSim =
+                IRUnion.computeUnion(intermediateCollection, intermediateCollection);
         logger.info("Union matrices computed.");
 
         logger.info("Starting enrichment phase...");
-        var enrichment = new Enrichment(project, irModel,
-                unionSourceIntermediateSim,
-                unionIntermediateTargetSim,
-                unionTargetIntermediateSim);
+        var enrichment = new Enrichment(
+                project, irModel, unionSourceIntermediateSim, unionIntermediateTargetSim, unionTargetIntermediateSim);
         SimilarityMatrix tarotSTMatrix = enrichment.enrichAndFuse();
         logger.info("Enrichment phase complete.");
 
-        SimilarityMatrix fusedMatrix = fuseAverage(irOnlyBaseMatrix, tarotSTMatrix);
+        boolean guardFusion = Boolean.parseBoolean(System.getProperty("triad.fusion.guard", "false"));
+        String fusionStrategy = System.getProperty("triad.fusion.strategy", guardFusion ? "guarded_avg" : "avg");
+        SimilarityMatrix fusedMatrix =
+                switch (fusionStrategy) {
+                    case "max" -> fuseConservativeMax(irOnlyBaseMatrix, tarotSTMatrix);
+                    case "guarded_avg" -> fuseAverageGuarded(irOnlyBaseMatrix, tarotSTMatrix);
+                    default -> fuseAverage(irOnlyBaseMatrix, tarotSTMatrix);
+                };
         logger.info("Fused IR-ONLY baseline and enriched matrix.");
 
         // Check if transitivity should be applied (can be disabled for testing)
         boolean applyTransitivity = Boolean.parseBoolean(System.getProperty("triad.transitivity.enabled", "true"));
-        
+
         if (applyTransitivity) {
-            var transitivity = new Transitivity(unionSourceIntermediateSim, unionIntermediateTargetSim,
-                    unionSourceSourceSim, unionIntermediateIntermediateSim);
+            var transitivity = new Transitivity(
+                    unionSourceIntermediateSim,
+                    unionIntermediateTargetSim,
+                    unionSourceSourceSim,
+                    unionIntermediateIntermediateSim);
             SimilarityMatrix finalMatrix = transitivity.applyTransitivity(fusedMatrix);
             logger.info("TRIAD pipeline finished with transitivity.");
             return finalMatrix;
@@ -83,8 +104,12 @@ public class TriadPipeline {
     }
 
     public SimilarityMatrix runIrOnly() throws IOException {
-        logger.info("Starting IR-ONLY pipeline for project '{}' with IR model '{}'", project.getName(), irModel.getModelName());
-        return irModel.Compute(new ArtifactsCollection(project.getSourceArtifacts()),
+        logger.info(
+                "Starting IR-ONLY pipeline for project '{}' with IR model '{}'",
+                project.getName(),
+                irModel.getModelName());
+        return irModel.Compute(
+                new ArtifactsCollection(project.getSourceArtifacts()),
                 new ArtifactsCollection(project.getTargetArtifacts()));
     }
 
@@ -95,6 +120,24 @@ public class TriadPipeline {
                 double baseScore = base.getScore(s, t);
                 double enrichedScore = enriched.getScore(s, t);
                 fused.setScore(s, t, Math.max(baseScore, enrichedScore));
+            }
+        }
+        return fused;
+    }
+
+    /**
+     * Average fusion, but guarded so that the fused score never falls below the base.
+     * Equivalent to max(base, 0.5*(base+enriched)). This preserves original TRIAD behavior
+     * while ensuring we don't degrade IR-ONLY links when enrichment is noisy.
+     */
+    private static SimilarityMatrix fuseAverageGuarded(SimilarityMatrix base, SimilarityMatrix enriched) {
+        SimilarityMatrix fused = base.deepCopy();
+        for (String s : base.getSourceArtifacts()) {
+            for (String t : base.getTargetArtifacts()) {
+                double b = base.getScore(s, t);
+                double e = enriched.getScore(s, t);
+                double avg = 0.5 * (b + e);
+                fused.setScore(s, t, Math.max(b, avg));
             }
         }
         return fused;

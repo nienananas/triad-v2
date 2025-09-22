@@ -13,14 +13,14 @@ public class JSD implements IRModel {
     }
 
     private SimilarityMatrix Compute(TermDocumentMatrix source, TermDocumentMatrix target) {
-        List<TermDocumentMatrix> matrices = TermDocumentMatrix.Equalize(source, target);
+        List<TermDocumentMatrix> matrices = TermDocumentMatrix.equalize(source, target);
         queries = distributionMatrix(matrices.get(0));
         documents = distributionMatrix(matrices.get(1));
         SimilarityMatrix sims = new SimilarityMatrix();
 
-        for (int i = 0; i < queries.NumDocs(); i++) {
+        for (int i = 0; i < queries.numDocs(); i++) {
             LinksList list = new LinksList();
-            for (int j = 0; j < documents.NumDocs(); j++) {
+            for (int j = 0; j < documents.numDocs(); j++) {
                 list.add(new SingleLink(queries.getDocumentName(i), documents.getDocumentName(j),
                         documentSimilarity(getDocument(queries, i), getDocument(documents, j))));
             }
@@ -33,8 +33,8 @@ public class JSD implements IRModel {
     }
     
     private double[] getDocument(TermDocumentMatrix matrix, int docIndex) {
-        double[] docVector = new double[matrix.NumTerms()];
-        for (int i = 0; i < matrix.NumTerms(); i++) {
+        double[] docVector = new double[matrix.numTerms()];
+        for (int i = 0; i < matrix.numTerms(); i++) {
             docVector[i] = matrix.getValue(docIndex, i);
         }
         return docVector;
@@ -53,7 +53,7 @@ public class JSD implements IRModel {
     }
 
     private TermDocumentMatrix distributionMatrix(TermDocumentMatrix matrix) {
-        for (int i = 0; i < matrix.NumDocs(); i++) {
+        for (int i = 0; i < matrix.numDocs(); i++) {
             double[] document = getDocument(matrix, i);
             double sum = 0;
             for (double v : document) {

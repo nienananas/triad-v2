@@ -26,7 +26,7 @@ public class LSI implements IRModel {
     private SimilarityMatrix Compute(TermDocumentMatrix source, TermDocumentMatrix target, TermDocumentMatrix both) {
 
         TermDocumentMatrix TF = ComputeTF(both);
-        double[] IDF = ComputeIDF(ComputeDF(both), both.NumDocs());
+        double[] IDF = ComputeIDF(ComputeDF(both), both.numDocs());
         TermDocumentMatrix TFIDF_Origin = ComputeTFIDF(TF, IDF);
 
         TermDocumentMatrix TFIDF_svd = svd(TFIDF_Origin);
@@ -46,9 +46,9 @@ public class LSI implements IRModel {
     }
 
     private RealMatrix convertTermDocumentMatrixToRealMatrix(TermDocumentMatrix tfidf_origin) {
-        double[][] dates = new double[tfidf_origin.NumTerms()][tfidf_origin.NumDocs()];
-        for (int i = 0; i < tfidf_origin.NumTerms(); i++) {
-            for (int j = 0; j < tfidf_origin.NumDocs(); j++) {
+        double[][] dates = new double[tfidf_origin.numTerms()][tfidf_origin.numDocs()];
+        for (int i = 0; i < tfidf_origin.numTerms(); i++) {
+            for (int j = 0; j < tfidf_origin.numDocs(); j++) {
                 dates[i][j] = tfidf_origin.getValue(j, i);
             }
         }
@@ -67,12 +67,12 @@ public class LSI implements IRModel {
     }
 
     private TermDocumentMatrix ReplaceIDWithTFIDF(TermDocumentMatrix ids, TermDocumentMatrix tfidf) {
-        List<TermDocumentMatrix> matrices = TermDocumentMatrix.Equalize(ids, tfidf);
+        List<TermDocumentMatrix> matrices = TermDocumentMatrix.equalize(ids, tfidf);
         ids = matrices.get(0);
         tfidf = matrices.get(1);
 
-        for (int i = 0; i < ids.NumDocs(); i++) {
-            for (int j = 0; j < ids.NumTerms(); j++) {
+        for (int i = 0; i < ids.numDocs(); i++) {
+            for (int j = 0; j < ids.numTerms(); j++) {
                 ids.setValue(i, j, tfidf.getValue(ids.getDocumentName(i), ids.getTermName(j)));
             }
         }
@@ -80,8 +80,8 @@ public class LSI implements IRModel {
     }
 
     private TermDocumentMatrix ComputeTFIDF(TermDocumentMatrix tf, double[] idf) {
-        for (int i = 0; i < tf.NumDocs(); i++) {
-            for (int j = 0; j < tf.NumTerms(); j++) {
+        for (int i = 0; i < tf.numDocs(); i++) {
+            for (int j = 0; j < tf.numTerms(); j++) {
                 tf.setValue(i, j, tf.getValue(i, j) * idf[j]);
             }
         }
@@ -101,10 +101,10 @@ public class LSI implements IRModel {
     }
 
     private double[] ComputeDF(TermDocumentMatrix matrix) {
-        double[] df = new double[matrix.NumTerms()];
-        for (int j = 0; j < matrix.NumTerms(); j++) {
+        double[] df = new double[matrix.numTerms()];
+        for (int j = 0; j < matrix.numTerms(); j++) {
             df[j] = 0.0;
-            for (int i = 0; i < matrix.NumDocs(); i++) {
+            for (int i = 0; i < matrix.numDocs(); i++) {
                 df[j] += (matrix.getValue(i, j) > 0.0) ? 1.0 : 0.0;
             }
         }
@@ -112,13 +112,13 @@ public class LSI implements IRModel {
     }
 
     private TermDocumentMatrix ComputeTF(TermDocumentMatrix matrix) {
-        for (int i = 0; i < matrix.NumDocs(); i++) {
+        for (int i = 0; i < matrix.numDocs(); i++) {
             double max = 0.0;
-            for (int k = 0; k < matrix.NumTerms(); k++) {
+            for (int k = 0; k < matrix.numTerms(); k++) {
                 max += matrix.getValue(i, k);
             }
             if (max > 0) {
-                for (int j = 0; j < matrix.NumTerms(); j++) {
+                for (int j = 0; j < matrix.numTerms(); j++) {
                     matrix.setValue(i, j, (matrix.getValue(i, j) / max));
                 }
             }
@@ -127,8 +127,8 @@ public class LSI implements IRModel {
     }
 
     private TermDocumentMatrix ComputeIdentities(TermDocumentMatrix matrix) {
-        for (int i = 0; i < matrix.NumDocs(); i++) {
-            for (int j = 0; j < matrix.NumTerms(); j++) {
+        for (int i = 0; i < matrix.numDocs(); i++) {
+            for (int j = 0; j < matrix.numTerms(); j++) {
                 matrix.setValue(i, j, ((matrix.getValue(i, j) > 0.0) ? 1.0 : 0.0));
             }
         }
@@ -137,18 +137,18 @@ public class LSI implements IRModel {
 
     private SimilarityMatrix ComputeSimilarities(TermDocumentMatrix ids, TermDocumentMatrix tfidf) {
         SimilarityMatrix sims = new SimilarityMatrix();
-        List<TermDocumentMatrix> matrices = TermDocumentMatrix.Equalize(ids, tfidf);
+        List<TermDocumentMatrix> matrices = TermDocumentMatrix.equalize(ids, tfidf);
 
         queries = matrices.get(0);
         documents = matrices.get(1);
 
-        for (int i = 0; i < ids.NumDocs(); i++) {
+        for (int i = 0; i < ids.numDocs(); i++) {
             LinksList links = new LinksList();
-            for (int j = 0; j < tfidf.NumDocs(); j++) {
+            for (int j = 0; j < tfidf.numDocs(); j++) {
                 double product = 0.0;
                 double asquared = 0.0;
                 double bsquared = 0.0;
-                for (int k = 0; k < matrices.get(0).NumTerms(); k++) {
+                for (int k = 0; k < matrices.get(0).numTerms(); k++) {
                     double a = matrices.get(0).getValue(i, k);
                     double b = matrices.get(1).getValue(j, k);
                     product += (a * b);

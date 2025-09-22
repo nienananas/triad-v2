@@ -1,15 +1,5 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.model;
-
-import edu.stanford.nlp.ling.CoreAnnotations;
-import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import edu.stanford.nlp.semgraph.SemanticGraph;
-import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.EnhancedPlusPlusDependenciesAnnotation;
-import edu.stanford.nlp.semgraph.SemanticGraphEdge;
-import edu.stanford.nlp.util.CoreMap;
-import io.github.ardoco.triad.text.TextProcessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,6 +10,19 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.semgraph.SemanticGraph;
+import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.EnhancedPlusPlusDependenciesAnnotation;
+import edu.stanford.nlp.semgraph.SemanticGraphEdge;
+import edu.stanford.nlp.util.CoreMap;
+
+import io.github.ardoco.triad.text.TextProcessor;
 
 /**
  * Represents a generic artifact in a software project, such as a requirement, a design document, or a source code file.
@@ -32,6 +35,11 @@ public abstract class Artifact {
 
     private static final Logger logger = LoggerFactory.getLogger(Artifact.class);
 
+    private static final String REL_COMPOUND = "compound";
+    private static final String REL_AMOD = "amod";
+    private static final String WORD_CONTEXT = "context";
+    private static final String WORD_CODE = "code";
+
     protected String identifier;
     protected String textBody;
     protected Set<Biterm> biterms;
@@ -42,6 +50,7 @@ public abstract class Artifact {
      * This heavy object is created only once to avoid performance overhead on artifact creation.
      */
     protected static final StanfordCoreNLP pipeline;
+
     static {
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize,ssplit,pos,lemma,depparse");
@@ -106,13 +115,15 @@ public abstract class Artifact {
 
         StringBuilder enrichment = new StringBuilder();
         for (Map.Entry<ConsensualBiterm, Integer> entry : consensualBiterms.entrySet()) {
-            String bitermText = entry.getKey().getFirstTerm() + " " + entry.getKey().getSecondTerm() + " ";
+            String bitermText =
+                    entry.getKey().getFirstTerm() + " " + entry.getKey().getSecondTerm() + " ";
             int frequency = entry.getValue();
             for (int i = 0; i < frequency; i++) {
                 enrichment.append(bitermText);
             }
         }
-        this.textBody = (this.textBody == null ? "" : this.textBody) + " " + enrichment.toString().trim();
+        this.textBody = (this.textBody == null ? "" : this.textBody) + " "
+                + enrichment.toString().trim();
         this.biterms = null; // Invalidate cache to force re-computation
     }
 
@@ -135,13 +146,25 @@ public abstract class Artifact {
      * Gets the artifact's unique identifier.
      * @return the identifier string.
      */
-    public String getIdentifier() { return identifier; }
+    public String getIdentifier() {
+        return identifier;
+    }
 
     /**
      * Gets the artifact's processed text body.
      * @return the text body string.
      */
-    public String getTextBody() { return textBody; }
+    public String getTextBody() {
+        return textBody;
+    }
+
+    /**
+     * Returns the base text used for enrichment. By default, this is the current text body.
+     * Preprocessed artifacts can override this to return the original processed text.
+     */
+    public String getEnrichmentBaseText() {
+        return textBody;
+    }
 
     /**
      * Analyzes the artifact's text and returns a map of term pairs and the grammatical relation connecting them.
@@ -153,7 +176,8 @@ public abstract class Artifact {
         Map<String, String> bitermRelations = new HashMap<>();
         if (this.textBody == null || this.textBody.isBlank()) return bitermRelations;
 
-        String raw = this.textBody.replaceAll("(?i)\\[(SUMMARY|DESCRIPTION)\\]", " ").replace('-', ' ');
+        String raw =
+                this.textBody.replaceAll("(?i)\\[(SUMMARY|DESCRIPTION)\\]", " ").replace('-', ' ');
         Annotation doc = new Annotation(raw);
         pipeline.annotate(doc);
 
@@ -193,9 +217,7 @@ public abstract class Artifact {
         Map<Biterm, Integer> bitermFrequencies = new HashMap<>();
         if (text == null || text.isBlank()) return new HashSet<>();
 
-        String raw = text
-            .replaceAll("(?i)\\[(SUMMARY|DESCRIPTION)\\]", " ")
-            .replace('-', ' ');
+        String raw = text.replaceAll("(?i)\\[(SUMMARY|DESCRIPTION)\\]", " ").replace('-', ' ');
         Annotation doc = new Annotation(raw);
         pipeline.annotate(doc);
 
@@ -210,16 +232,19 @@ public abstract class Artifact {
             Map<String, Set<String>> headModifiers = new HashMap<>();
             for (SemanticGraphEdge edge : deps.edgeListSorted()) {
                 String rel = edge.getRelation().toString();
-                if (rel.equals("compound") || rel.equals("amod")) {
+                if (rel.equals(REL_COMPOUND) || rel.equals(REL_AMOD)) {
                     String head = TextProcessor.processWord(edge.getGovernor().originalText());
-                    String mod  = TextProcessor.processWord(edge.getDependent().originalText());
+                    String mod = TextProcessor.processWord(edge.getDependent().originalText());
                     if (!head.isEmpty() && !mod.isEmpty() && !head.equals(mod)) {
-                        headModifiers.computeIfAbsent(head, k -> new LinkedHashSet<>()).add(mod);
+                        headModifiers
+                                .computeIfAbsent(head, k -> new LinkedHashSet<>())
+                                .add(mod);
                     }
                 }
             }
 
-            // Propagate modifiers one hop to handle chains (e.g., "state transition diagram" -> diagram:{state, transition}).
+            // Propagate modifiers one hop to handle chains (e.g., "state transition diagram" -> diagram:{state,
+            // transition}).
             for (Map.Entry<String, Set<String>> e : new HashMap<>(headModifiers).entrySet()) {
                 String head = e.getKey();
                 Set<String> modsCopy = new LinkedHashSet<>(e.getValue());
@@ -227,8 +252,8 @@ public abstract class Artifact {
                     for (String x : headModifiers.getOrDefault(mid, Collections.emptySet())) {
                         if (!x.equals(head)) {
                             headModifiers
-                                .computeIfAbsent(head, k -> new LinkedHashSet<>())
-                                .add(x);
+                                    .computeIfAbsent(head, k -> new LinkedHashSet<>())
+                                    .add(x);
                         }
                     }
                 }
@@ -250,17 +275,17 @@ public abstract class Artifact {
                 if (processedGov.isEmpty() || processedDep.isEmpty() || processedGov.equals(processedDep)) continue;
 
                 // Heuristic: Special handling for "context" to reduce noise.
-                if ("context".equals(processedGov) || "context".equals(processedDep)) {
-                    String other = "context".equals(processedGov) ? processedDep : processedGov;
+                if (WORD_CONTEXT.equals(processedGov) || WORD_CONTEXT.equals(processedDep)) {
+                    String other = WORD_CONTEXT.equals(processedGov) ? processedDep : processedGov;
                     if (!other.equals("ssl") && !other.equals("use")) continue;
                 }
 
                 // Heuristic: Bridge relationships around the word "code" using its modifiers.
-                if (!rel.equals("compound") && !rel.equals("amod")) {
-                    boolean involvesCode = "code".equals(processedGov) || "code".equals(processedDep);
+                if (!rel.equals(REL_COMPOUND) && !rel.equals(REL_AMOD)) {
+                    boolean involvesCode = WORD_CODE.equals(processedGov) || WORD_CODE.equals(processedDep);
                     if (involvesCode) {
-                        String other = "code".equals(processedGov) ? processedDep : processedGov;
-                        for (String m : headModifiers.getOrDefault("code", Collections.emptySet())) {
+                        String other = WORD_CODE.equals(processedGov) ? processedDep : processedGov;
+                        for (String m : headModifiers.getOrDefault(WORD_CODE, Collections.emptySet())) {
                             Biterm b1 = new Biterm(other, m);
                             bitermFrequencies.merge(b1, 1, Integer::sum);
                             Biterm b2 = new Biterm(m, other);
@@ -271,25 +296,31 @@ public abstract class Artifact {
                 }
 
                 // Allow-list of semantically significant grammatical relations.
-                boolean allowed = rel.equals("compound") || rel.equals("amod") ||
-                                  rel.equals("obj") || rel.equals("dobj") ||
-                                  rel.equals("xcomp") || rel.equals("nmod:of") ||
-                                  rel.startsWith("acl");
-                
+                boolean allowed = rel.equals(REL_COMPOUND)
+                        || rel.equals(REL_AMOD)
+                        || rel.equals("obj")
+                        || rel.equals("dobj")
+                        || rel.equals("xcomp")
+                        || rel.equals("nmod:of")
+                        || rel.startsWith("acl");
+
                 // Heuristic: Allow specific prepositional relations.
                 if (rel.startsWith("nmod:for") || rel.startsWith("obl:for")) {
-                    String govLemma = TextProcessor.processWord(edge.getGovernor().originalText());
+                    String govLemma =
+                            TextProcessor.processWord(edge.getGovernor().originalText());
                     allowed = "use".equals(govLemma);
                 }
                 if (rel.startsWith("nmod:to") || rel.startsWith("obl:to")) {
-                    String govLemma = TextProcessor.processWord(edge.getGovernor().originalText());
+                    String govLemma =
+                            TextProcessor.processWord(edge.getGovernor().originalText());
                     allowed = "set".equals(govLemma);
                 }
                 if (rel.equals("nsubj")) {
-                    String govLemma = TextProcessor.processWord(edge.getGovernor().originalText());
+                    String govLemma =
+                            TextProcessor.processWord(edge.getGovernor().originalText());
                     allowed = "set".equals(govLemma);
                 }
-                
+
                 if (!allowed) continue;
 
                 // Create biterms in both orders to treat the relationship as symmetric.
