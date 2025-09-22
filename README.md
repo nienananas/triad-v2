@@ -100,3 +100,8 @@ While this implementation successfully replicates the core TRIAD algorithm, seve
 *   **Additional IR Methods**: Integrate and test more IR models. A Jensen-Shannon Divergence (JSD) model was partially implemented but remains buggy. Finalizing it and exploring other modern techniques could yield further performance improvements.
 *   **Curated Datasets for Testing**: Create a clean, version-controlled dataset that includes the intermediate results of our pipeline (e.g., extracted biterms, processed text). This would provide a trusted baseline for regression testing and make it easier to validate changes to individual components of the system.
 *   **Expanded Language and Artifact Support**: Extend the `tree-sitter` integration to support more programming languages beyond Java and C. Furthermore, add parsers for other structured artifact formats, such as UML models or XML-based documents, to broaden the applicability of the TRIAD approach.
+
+
+## Disclaimer
+
+The implementations for the IR models as well as the interface have been copied from the original implementation at https://github.com/huiAlex/TRIAD.git.
