@@ -15,18 +15,36 @@ import java.util.stream.Collectors;
 
 public class OutputLog {
 
+    /**
+     * Write biterms (one per line) to a file, overwriting existing contents.
+     *
+     * @param path filesystem path of the output file
+     * @param biterms set of biterms to persist
+     */
     public static void writeBitermsToFile(String path, Set<? extends Biterm> biterms) throws IOException {
         String content = biterms.stream().map(Biterm::toString).collect(Collectors.joining(System.lineSeparator()));
 
         Files.writeString(Paths.get(path), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
+    /**
+     * Write a similarity matrix in CSV form to a file, overwriting existing contents.
+     *
+     * @param path filesystem path of the output file
+     * @param similarityMatrix matrix to serialize
+     */
     public static void writeSimilarityMatrixToFile(String path, SimilarityMatrix similarityMatrix) throws IOException {
         String content = similarityMatrix.toString();
 
         Files.writeString(Paths.get(path), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
+    /**
+     * Write traceability links as CSV with header.
+     *
+     * @param path filesystem path of the output file
+     * @param links ordered list of links to write
+     */
     public static void writeTraceabilityLinksToFile(String path, List<SingleLink> links) throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append("Source,Target,Score\n");
@@ -38,6 +56,14 @@ public class OutputLog {
                 Paths.get(path), sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
+    /**
+     * Append precision values across recall levels for a given approach to a CSV file.
+     * Creates the file and header if it does not yet exist.
+     *
+     * @param path filesystem path of the PR curve file
+     * @param approachName label such as "IR-ONLY-VSM" or "TRIAD-VSM"
+     * @param precisions list of 20 precision values for recall levels 0.05..1.00
+     */
     public static void writePrecisionRecallCurveToFile(String path, String approachName, List<Double> precisions) throws IOException {
         Path filePath = Paths.get(path);
         StringBuilder sb = new StringBuilder();

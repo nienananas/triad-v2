@@ -18,11 +18,24 @@ public class TriadPipeline {
     private final Project project;
     private final IRModel irModel;
 
+    /**
+     * Construct a TRIAD pipeline for a specific project and IR model.
+     *
+     * @param project the project providing artifacts and configuration
+     * @param irModel the IR model used to compute similarities (e.g., VSM)
+     */
     public TriadPipeline(Project project, IRModel irModel) {
         this.project = project;
         this.irModel = irModel;
     }
 
+    /**
+     * Execute the full TRIAD pipeline: IR-ONLY baseline, enrichment, fusion,
+     * and optional transitivity.
+     *
+     * @return fused similarity matrix after enrichment (and transitivity if enabled)
+     * @throws IOException if artifact loading fails
+     */
     public SimilarityMatrix run() throws IOException {
         logger.info(
                 "Starting TRIAD pipeline for project '{}' with IR model '{}'",
@@ -103,6 +116,12 @@ public class TriadPipeline {
         }
     }
 
+    /**
+     * Execute the IR-ONLY baseline between sources and targets using the configured IR model.
+     *
+     * @return baseline similarity matrix
+     * @throws IOException if artifact loading fails
+     */
     public SimilarityMatrix runIrOnly() throws IOException {
         logger.info(
                 "Starting IR-ONLY pipeline for project '{}' with IR model '{}'",

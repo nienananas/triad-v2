@@ -21,6 +21,18 @@ public class Enrichment {
     private final SimilarityMatrix sourceToIntermediateSim; // rows = sources, cols = intermediates
     private final SimilarityMatrix targetToIntermediateSim; // rows = targets, cols = intermediates
 
+    /**
+     * Create an enrichment stage of TRIAD.
+     * <p>
+     * This component selects consensual biterms from nearest-neighbor intermediates and
+     * appends them to source/target texts before recomputing similarities.
+     *
+     * @param project project providing artifacts
+     * @param irModel IR model used to recompute similarities after enrichment
+     * @param sourceToIntermediateSim similarity between sources and intermediates
+     * @param intermediateToTargetSim similarity between intermediates and targets (kept for parity)
+     * @param targetToIntermediateSim similarity between targets and intermediates
+     */
     public Enrichment(
             Project project,
             IRModel irModel,
@@ -33,6 +45,12 @@ public class Enrichment {
         this.targetToIntermediateSim = targetToIntermediateSim;
     }
 
+    /**
+     * Perform enrichment on sources and targets and fuse the resulting similarity matrices.
+     *
+     * @return element-wise average of enriched (source->target) and (source->enriched target)
+     * @throws IOException if artifact loading fails
+     */
     public SimilarityMatrix enrichAndFuse() throws IOException {
         Map<String, Map<String, Integer>> intermediateBitermMap =
                 EnrichmentUtils.getBitermFrequencyMap(project.getIntermediateArtifacts());

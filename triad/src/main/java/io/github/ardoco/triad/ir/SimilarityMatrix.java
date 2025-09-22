@@ -11,6 +11,9 @@ import java.util.Set;
 public class SimilarityMatrix {
     private Map<String, LinksList> matrix = new HashMap<>();
 
+    /**
+     * Add a similarity score for a source-target pair.
+     */
     public void addLink(String source, String target, double score) {
         if (!matrix.containsKey(source)) {
             matrix.put(source, new LinksList());
@@ -18,14 +21,23 @@ public class SimilarityMatrix {
         matrix.get(source).add(new SingleLink(source, target, score));
     }
 
+    /**
+     * Get all links originating from a given source artifact id.
+     */
     public LinksList getLinks(String source) {
         return matrix.get(source);
     }
 
+    /**
+     * Return the set of source artifact identifiers appearing in the matrix.
+     */
     public Set<String> getSourceArtifacts() {
         return matrix.keySet();
     }
 
+    /**
+     * Return the set of target artifact identifiers appearing in the matrix.
+     */
     public Set<String> getTargetArtifacts() {
         Set<String> targetArtifacts = new HashSet<>();
         for (LinksList links : matrix.values()) {
@@ -36,6 +48,9 @@ public class SimilarityMatrix {
         return targetArtifacts;
     }
 
+    /**
+     * Flatten and return all links contained in the matrix.
+     */
     public List<SingleLink> getAllLinks() {
         List<SingleLink> allLinks = new ArrayList<>();
         for (LinksList linksList : matrix.values()) {
@@ -44,6 +59,9 @@ public class SimilarityMatrix {
         return allLinks;
     }
 
+    /**
+     * Get the similarity score for a specific source-target pair (0.0 if absent).
+     */
     public double getScore(String source, String target) {
         if (matrix.containsKey(source)) {
             for (SingleLink link : matrix.get(source)) {
@@ -55,6 +73,9 @@ public class SimilarityMatrix {
         return 0.0;
     }
 
+    /**
+     * Set or replace the similarity score for a source-target pair.
+     */
     public void setScore(String source, String target, double newScore) {
         if (!matrix.containsKey(source)) {
             matrix.put(source, new LinksList());
@@ -65,6 +86,9 @@ public class SimilarityMatrix {
         links.add(new SingleLink(source, target, newScore));
     }
 
+    /**
+     * Create a deep copy of this similarity matrix.
+     */
     public SimilarityMatrix deepCopy() {
         SimilarityMatrix newMatrix = new SimilarityMatrix();
         for (Map.Entry<String, LinksList> entry : this.matrix.entrySet()) {

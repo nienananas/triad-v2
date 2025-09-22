@@ -29,6 +29,16 @@ public class App {
     private static final Logger logger = LoggerFactory.getLogger(App.class);
     private static final List<IRModel> IR_MODELS_TO_RUN = List.of(new VSM(), new LSI(), new JSD());
 
+    /**
+     * Entry point of the TRIAD application.
+     * <p>
+     * Reads the {@code config.json}, iterates over configured projects and IR models,
+     * runs the IR-ONLY baseline and the full TRIAD pipeline, and writes evaluation
+     * artifacts (summary and precision-recall curves) to the {@code output/} folder.
+     *
+     * @param args command-line arguments (unused)
+     * @throws IOException if reading configuration or writing outputs fails
+     */
     public static void main(String[] args) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         Config config = mapper.readValue(new File("config.json"), Config.class);

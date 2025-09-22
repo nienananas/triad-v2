@@ -16,6 +16,11 @@ public class TermDocumentMatrix {
     private List<String> termNames;
     private double[][] matrix;
 
+    /**
+     * Build a term-document matrix from an artifacts collection using token frequencies.
+     *
+     * @param artifacts artifacts keyed by identifier
+     */
     public TermDocumentMatrix(ArtifactsCollection artifacts) {
         // Build doc list
         this.docNames = new ArrayList<>(artifacts.keySet());
@@ -70,18 +75,30 @@ public class TermDocumentMatrix {
         this.matrix = matrix;
     }
 
+    /**
+     * @return number of documents (artifacts)
+     */
     public int numDocs() {
         return docNames.size();
     }
 
+    /**
+     * @return number of unique terms across all documents
+     */
     public int numTerms() {
         return termNames.size();
     }
 
+    /**
+     * Get the value at a specific doc/term index.
+     */
     public double getValue(int docIndex, int termIndex) {
         return matrix[docIndex][termIndex];
     }
 
+    /**
+     * Get the value for a named doc/term pair.
+     */
     public double getValue(String docName, String termName) {
         int docIndex = docNames.indexOf(docName);
         int termIndex = termNames.indexOf(termName);
@@ -91,22 +108,37 @@ public class TermDocumentMatrix {
         return matrix[docIndex][termIndex];
     }
 
+    /**
+     * Set the value at a specific doc/term index.
+     */
     public void setValue(int docIndex, int termIndex, double value) {
         matrix[docIndex][termIndex] = value;
     }
 
+    /**
+     * @return the name (identifier) of a document at index
+     */
     public String getDocumentName(int docIndex) {
         return docNames.get(docIndex);
     }
 
+    /**
+     * @return the term string at index
+     */
     public String getTermName(int termIndex) {
         return termNames.get(termIndex);
     }
 
+    /**
+     * @return immutable ordered list of term names
+     */
     public List<String> getTermNames() {
         return this.termNames;
     }
 
+    /**
+     * Align two matrices to the same term vocabulary, returning reindexed copies.
+     */
     public static List<TermDocumentMatrix> equalize(TermDocumentMatrix source, TermDocumentMatrix target) {
         Set<String> allTerms = new HashSet<>(source.termNames);
         allTerms.addAll(target.termNames);

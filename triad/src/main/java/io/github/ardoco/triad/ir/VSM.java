@@ -8,6 +8,9 @@ public class VSM implements IRModel {
     private TermDocumentMatrix documents;
 
     @Override
+    /**
+     * Compute VSM similarities between source and target artifact collections.
+     */
     public SimilarityMatrix Compute(ArtifactsCollection source, ArtifactsCollection target) {
         ArtifactsCollection bothSourceAndTarget = new ArtifactsCollection();
         bothSourceAndTarget.putAll(source);
@@ -18,6 +21,9 @@ public class VSM implements IRModel {
                 new TermDocumentMatrix(bothSourceAndTarget));
     }
 
+    /**
+     * Compute VSM similarities from pre-built term-document matrices.
+     */
     public SimilarityMatrix Compute(TermDocumentMatrix source, TermDocumentMatrix target, TermDocumentMatrix both) {
         TermDocumentMatrix TF = ComputeTF(both);
         double[] IDF = ComputeIDF(ComputeDF(both), both.numDocs());

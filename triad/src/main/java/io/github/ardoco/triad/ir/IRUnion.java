@@ -10,6 +10,13 @@ import java.util.Set;
 public final class IRUnion {
     private IRUnion() {}
 
+    /**
+     * Compute the average union of VSM, LSI, and JSD similarities.
+     *
+     * @param source source artifacts
+     * @param target target artifacts
+     * @return element-wise average of per-model similarity scores
+     */
     public static SimilarityMatrix computeUnion(ArtifactsCollection source, ArtifactsCollection target) {
         IRModel vsm = new VSM();
         IRModel lsi = new LSI();

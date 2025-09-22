@@ -21,6 +21,14 @@ public class TarotOnlyEnrichment {
     private final SimilarityMatrix sourceToTargetSim; // rows = sources, cols = targets
     private final SimilarityMatrix targetToSourceSim; // rows = targets, cols = sources
 
+    /**
+     * Create TAROT-only enrichment for projects without intermediates.
+     *
+     * @param project project providing artifacts
+     * @param irModel IR model used after enrichment
+     * @param sourceToTargetSim similarity between sources and targets
+     * @param targetToSourceSim similarity between targets and sources
+     */
     public TarotOnlyEnrichment(
             Project project, IRModel irModel, SimilarityMatrix sourceToTargetSim, SimilarityMatrix targetToSourceSim) {
         this.project = project;
@@ -29,6 +37,12 @@ public class TarotOnlyEnrichment {
         this.targetToSourceSim = targetToSourceSim;
     }
 
+    /**
+     * Perform TAROT-only enrichment (SRC<->TGT neighbors) and fuse the results.
+     *
+     * @return element-wise average of enriched similarities in both directions
+     * @throws IOException if artifact loading fails
+     */
     public SimilarityMatrix enrichAndFuse() throws IOException {
         Map<String, Map<String, Integer>> sourceBiterms =
                 EnrichmentUtils.getBitermFrequencyMap(project.getSourceArtifacts());

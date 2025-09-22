@@ -20,6 +20,14 @@ public class Transitivity {
     private static final int T_HOP1 = 3; // top-k per hop
     private static final double M_HOP1 = 0.5; // relative threshold per hop
 
+    /**
+     * Construct the transitivity component with all required similarity matrices.
+     *
+     * @param sourceIntermediateSimilarity S→M similarities
+     * @param intermediateTargetSimilarity M→T similarities
+     * @param sourceSourceSimilarity S→S similarities (inner path)
+     * @param intermediateIntermediateSimilarity M→M similarities (inner path)
+     */
     public Transitivity(
             SimilarityMatrix sourceIntermediateSimilarity,
             SimilarityMatrix intermediateTargetSimilarity,
@@ -31,6 +39,12 @@ public class Transitivity {
         this.intermediateIntermediateSimilarity = intermediateIntermediateSimilarity;
     }
 
+    /**
+     * Apply multi-hop transitivity and conservatively fuse with the base matrix.
+     *
+     * @param baseMatrix current S→T similarities (post-enrichment)
+     * @return matrix with transitive boosts applied via max fusion
+     */
     public SimilarityMatrix applyTransitivity(SimilarityMatrix baseMatrix) {
         SimilarityMatrix adjustedMatrix = baseMatrix.deepCopy();
 
