@@ -194,7 +194,9 @@ public class PreprocessedProject extends Project {
 
                         for (int i = 0; i < weight; i++)
                             sb.append(t1).append(' ').append(t2).append(' ');
-                    } catch (Exception ignore) { /* skip malformed */ }
+                    } catch (Exception ignore) {
+                        /* skip malformed */
+                    }
                 });
         return sb.toString().trim();
     }

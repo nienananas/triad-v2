@@ -1,9 +1,5 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.model;
-
-import io.github.ardoco.triad.config.ArtifactConfig;
-import io.github.ardoco.triad.config.ProjectConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,6 +9,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.github.ardoco.triad.config.ArtifactConfig;
+import io.github.ardoco.triad.config.ProjectConfig;
+
 public class Project {
     private static final Logger logger = LoggerFactory.getLogger(Project.class);
     private final ProjectConfig config;
@@ -20,7 +22,7 @@ public class Project {
     public Project(ProjectConfig config) {
         this.config = config;
     }
-    
+
     /**
      * Provides subclasses with access to the project configuration.
      */
@@ -51,22 +53,21 @@ public class Project {
         Path root = Paths.get("dataset").resolve(artifactConfig.getPath());
 
         try (Stream<Path> files = Files.walk(root)) {
-            return files
-                .filter(Files::isRegularFile)
-                .map(filePath -> {
-                    try {
-                        String content = Files.readString(filePath);
-                        String fileName = filePath.getFileName().toString();
-                        int lastDot = fileName.lastIndexOf('.');
-                        String identifier = (lastDot > 0) ? fileName.substring(0, lastDot) : fileName;
-                        return ArtifactFactory.create(identifier, content, artifactConfig.getType());
-                    } catch (IOException e) {
-                        logger.error("Error reading file: " + filePath, e);
-                        return null;
-                    }
-                })
-                .filter(a -> a != null)
-                .collect(Collectors.toSet());
+            return files.filter(Files::isRegularFile)
+                    .map(filePath -> {
+                        try {
+                            String content = Files.readString(filePath);
+                            String fileName = filePath.getFileName().toString();
+                            int lastDot = fileName.lastIndexOf('.');
+                            String identifier = (lastDot > 0) ? fileName.substring(0, lastDot) : fileName;
+                            return ArtifactFactory.create(identifier, content, artifactConfig.getType());
+                        } catch (IOException e) {
+                            logger.error("Error reading file: " + filePath, e);
+                            return null;
+                        }
+                    })
+                    .filter(a -> a != null)
+                    .collect(Collectors.toSet());
         }
     }
 

@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.model;
 
 import java.util.Objects;
@@ -5,7 +6,7 @@ import java.util.Objects;
 public class Biterm implements Comparable<Biterm> {
     private final String term1;
     private final String term2;
-    private final String stringRepresentation; 
+    private final String stringRepresentation;
     private int weight = 1;
 
     public Biterm(String term1, String term2) {
@@ -25,14 +26,30 @@ public class Biterm implements Comparable<Biterm> {
         return t1 + new String(chars);
     }
 
-    public String getFirstTerm() { return term1; }
-    public String getSecondTerm() { return term2; }
-    public int getWeight() { return weight; }
-    public void setWeight(int weight) { this.weight = weight; }
-    public void incrementWeight(int amount) { this.weight += amount; }
+    public String getFirstTerm() {
+        return term1;
+    }
+
+    public String getSecondTerm() {
+        return term2;
+    }
+
+    public int getWeight() {
+        return weight;
+    }
+
+    public void setWeight(int weight) {
+        this.weight = weight;
+    }
+
+    public void incrementWeight(int amount) {
+        this.weight += amount;
+    }
 
     @Override
-    public String toString() { return this.stringRepresentation; }
+    public String toString() {
+        return this.stringRepresentation;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -42,8 +59,12 @@ public class Biterm implements Comparable<Biterm> {
     }
 
     @Override
-    public int hashCode() { return Objects.hash(stringRepresentation); }
+    public int hashCode() {
+        return Objects.hash(stringRepresentation);
+    }
 
     @Override
-    public int compareTo(Biterm o) { return this.stringRepresentation.compareTo(o.stringRepresentation); }
+    public int compareTo(Biterm o) {
+        return this.stringRepresentation.compareTo(o.stringRepresentation);
+    }
 }

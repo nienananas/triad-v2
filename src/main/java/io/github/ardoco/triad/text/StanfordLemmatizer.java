@@ -1,13 +1,14 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.text;
+
+import java.util.List;
+import java.util.Properties;
+import java.util.stream.Collectors;
 
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-
-import java.util.List;
-import java.util.Properties;
-import java.util.stream.Collectors;
 
 public class StanfordLemmatizer {
 

@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.ir;
 
 import java.util.HashSet;

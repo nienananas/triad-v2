@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.ir;
 
 import java.util.Collections;
@@ -21,7 +22,9 @@ public class JSD implements IRModel {
         for (int i = 0; i < queries.numDocs(); i++) {
             LinksList list = new LinksList();
             for (int j = 0; j < documents.numDocs(); j++) {
-                list.add(new SingleLink(queries.getDocumentName(i), documents.getDocumentName(j),
+                list.add(new SingleLink(
+                        queries.getDocumentName(i),
+                        documents.getDocumentName(j),
                         documentSimilarity(getDocument(queries, i), getDocument(documents, j))));
             }
             Collections.sort(list, Collections.reverseOrder());
@@ -31,7 +34,7 @@ public class JSD implements IRModel {
         }
         return sims;
     }
-    
+
     private double[] getDocument(TermDocumentMatrix matrix, int docIndex) {
         double[] docVector = new double[matrix.numTerms()];
         for (int i = 0; i < matrix.numTerms(); i++) {
@@ -39,7 +42,6 @@ public class JSD implements IRModel {
         }
         return docVector;
     }
-
 
     private double documentSimilarity(double[] document1, double[] document2) {
         double similarity;

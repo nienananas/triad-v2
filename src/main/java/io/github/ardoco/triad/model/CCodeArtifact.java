@@ -1,6 +1,13 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.model;
 
-import io.github.ardoco.triad.text.TextProcessor;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.treesitter.TSLanguage;
@@ -9,12 +16,7 @@ import org.treesitter.TSParser;
 import org.treesitter.TSTree;
 import org.treesitter.TreeSitterC;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import io.github.ardoco.triad.text.TextProcessor;
 
 public class CCodeArtifact extends Artifact {
     private static final Logger logger = LoggerFactory.getLogger(CCodeArtifact.class);
@@ -84,7 +86,8 @@ public class CCodeArtifact extends Artifact {
             case "enum_specifier":
                 TSNode typeNameNode = findChildNodeByType(node, "type_identifier");
                 if (typeNameNode != null) {
-                    updateFrequencies(bitermFrequencies, getTermsFromIdentifier(getNodeText(typeNameNode, sourceCode)), 2);
+                    updateFrequencies(
+                            bitermFrequencies, getTermsFromIdentifier(getNodeText(typeNameNode, sourceCode)), 2);
                 }
                 break;
 
@@ -95,7 +98,8 @@ public class CCodeArtifact extends Artifact {
             case "call_expression":
                 TSNode functionCallNode = findChildNodeByType(node, "identifier");
                 if (functionCallNode != null) {
-                    updateFrequencies(bitermFrequencies, getTermsFromIdentifier(getNodeText(functionCallNode, sourceCode)), 1);
+                    updateFrequencies(
+                            bitermFrequencies, getTermsFromIdentifier(getNodeText(functionCallNode, sourceCode)), 1);
                 }
                 break;
 
@@ -128,15 +132,18 @@ public class CCodeArtifact extends Artifact {
                 for (int i = 0; i < parametersNode.getChildCount(); i++) {
                     TSNode paramDeclaration = parametersNode.getChild(i);
                     if ("parameter_declaration".equals(paramDeclaration.getType())) {
-                        TSNode paramTypeNode = findChildNodeByPredicate(paramDeclaration, n -> isCTypeNode(n.getType()));
+                        TSNode paramTypeNode =
+                                findChildNodeByPredicate(paramDeclaration, n -> isCTypeNode(n.getType()));
                         TSNode paramDeclarator = findChildNodeByType(paramDeclaration, "pointer_declarator");
                         if (paramDeclarator == null) {
                             paramDeclarator = findChildNodeByType(paramDeclaration, "declarator");
                         }
-                        TSNode paramIdentifier = (paramDeclarator != null) ? findChildNodeByType(paramDeclarator, "identifier") : null;
+                        TSNode paramIdentifier =
+                                (paramDeclarator != null) ? findChildNodeByType(paramDeclarator, "identifier") : null;
 
                         if (paramIdentifier != null) {
-                            updateFrequencies(freqs, getTermsFromIdentifier(getNodeText(paramIdentifier, sourceCode)), 1);
+                            updateFrequencies(
+                                    freqs, getTermsFromIdentifier(getNodeText(paramIdentifier, sourceCode)), 1);
                         }
                         if (paramTypeNode != null) {
                             updateFrequencies(freqs, getTermsFromIdentifier(getNodeText(paramTypeNode, sourceCode)), 1);
@@ -146,7 +153,6 @@ public class CCodeArtifact extends Artifact {
             }
         }
     }
-
 
     private void extractDeclarationInfo(TSNode declarationNode, Map<Biterm, Integer> freqs, String sourceCode) {
         TSNode typeNode = findChildNodeByPredicate(declarationNode, n -> isCTypeNode(n.getType()));
@@ -166,9 +172,10 @@ public class CCodeArtifact extends Artifact {
     }
 
     private boolean isCTypeNode(String nodeType) {
-        return "primitive_type".equals(nodeType) || "type_identifier".equals(nodeType) || "sized_type_specifier".equals(nodeType);
+        return "primitive_type".equals(nodeType)
+                || "type_identifier".equals(nodeType)
+                || "sized_type_specifier".equals(nodeType);
     }
-
 
     private String getNodeText(TSNode node, String sourceCode) {
         if (node == null) return "";

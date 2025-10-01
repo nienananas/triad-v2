@@ -1,9 +1,10 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.ir;
-
-import io.github.ardoco.triad.model.Artifact;
 
 import java.util.HashMap;
 import java.util.Set;
+
+import io.github.ardoco.triad.model.Artifact;
 
 public class ArtifactsCollection extends HashMap<String, Artifact> {
     /**

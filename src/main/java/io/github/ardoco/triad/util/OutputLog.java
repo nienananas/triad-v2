@@ -1,8 +1,5 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.util;
-
-import io.github.ardoco.triad.ir.SimilarityMatrix;
-import io.github.ardoco.triad.ir.SingleLink;
-import io.github.ardoco.triad.model.Biterm;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,6 +9,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.github.ardoco.triad.ir.SimilarityMatrix;
+import io.github.ardoco.triad.ir.SingleLink;
+import io.github.ardoco.triad.model.Biterm;
 
 public class OutputLog {
 
@@ -64,7 +65,8 @@ public class OutputLog {
      * @param approachName label such as "IR-ONLY-VSM" or "TRIAD-VSM"
      * @param precisions list of 20 precision values for recall levels 0.05..1.00
      */
-    public static void writePrecisionRecallCurveToFile(String path, String approachName, List<Double> precisions) throws IOException {
+    public static void writePrecisionRecallCurveToFile(String path, String approachName, List<Double> precisions)
+            throws IOException {
         Path filePath = Paths.get(path);
         StringBuilder sb = new StringBuilder();
 

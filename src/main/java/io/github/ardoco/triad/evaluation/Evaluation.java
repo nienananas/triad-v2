@@ -1,18 +1,21 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.evaluation;
-
-import edu.kit.kastel.mcse.ardoco.metrics.ClassificationMetricsCalculator;
-import edu.kit.kastel.mcse.ardoco.metrics.result.SingleClassificationResult;
-import edu.stanford.nlp.util.IdentityHashSet;
-import io.github.ardoco.triad.ir.LinksList;
-import io.github.ardoco.triad.ir.SimilarityMatrix;
-import io.github.ardoco.triad.ir.SingleLink;
-import org.apache.commons.math3.stat.inference.WilcoxonSignedRankTest;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.commons.math3.stat.inference.WilcoxonSignedRankTest;
+
+import edu.kit.kastel.mcse.ardoco.metrics.ClassificationMetricsCalculator;
+import edu.kit.kastel.mcse.ardoco.metrics.result.SingleClassificationResult;
+import edu.stanford.nlp.util.IdentityHashSet;
+
+import io.github.ardoco.triad.ir.LinksList;
+import io.github.ardoco.triad.ir.SimilarityMatrix;
+import io.github.ardoco.triad.ir.SingleLink;
 
 public class Evaluation {
 
@@ -44,16 +47,16 @@ public class Evaluation {
                 null);
 
         return new PRF(
-                classificationResult.getPrecision(),
-                classificationResult.getRecall(),
-                classificationResult.getF1());
+                classificationResult.getPrecision(), classificationResult.getRecall(), classificationResult.getF1());
     }
 
     public static double calculatePrecision(List<SingleLink> retrieved, GoldStandard gold) {
         if (retrieved.isEmpty()) {
             return 0.0;
         }
-        long correct = retrieved.stream().filter(link -> gold.isLink(link.getSourceArtifactId(), link.getTargetArtifactId())).count();
+        long correct = retrieved.stream()
+                .filter(link -> gold.isLink(link.getSourceArtifactId(), link.getTargetArtifactId()))
+                .count();
         return (double) correct / retrieved.size();
     }
 
@@ -61,7 +64,9 @@ public class Evaluation {
         if (retrieved.isEmpty()) {
             return 0.0;
         }
-        long correct = retrieved.stream().filter(link -> gold.isLink(link.getSourceArtifactId(), link.getTargetArtifactId())).count();
+        long correct = retrieved.stream()
+                .filter(link -> gold.isLink(link.getSourceArtifactId(), link.getTargetArtifactId()))
+                .count();
         int totalRelevant = gold.getTotalRelevantLinks();
         return totalRelevant == 0 ? 0.0 : (double) correct / totalRelevant;
     }
@@ -122,7 +127,8 @@ public class Evaluation {
      * @param levels The number of recall levels (e.g., 11 for 0.0, 0.1, ..., 1.0 or 20 for 0.05, 0.10, ..., 1.00).
      * @return A list of interpolated precision values.
      */
-    public static List<Double> getPrecisionAtRecallLevels(SimilarityMatrix similarityMatrix, GoldStandard gold, int levels) {
+    public static List<Double> getPrecisionAtRecallLevels(
+            SimilarityMatrix similarityMatrix, GoldStandard gold, int levels) {
         List<SingleLink> allLinks = similarityMatrix.getAllLinks();
         allLinks.sort(Comparator.comparingDouble(SingleLink::getScore).reversed());
 

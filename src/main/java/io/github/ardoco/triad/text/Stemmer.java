@@ -1,8 +1,9 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.text;
 
-import org.tartarus.snowball.ext.EnglishStemmer;
-
 import java.util.Locale;
+
+import org.tartarus.snowball.ext.EnglishStemmer;
 
 public class Stemmer {
     private static final EnglishStemmer stemmer = new EnglishStemmer();

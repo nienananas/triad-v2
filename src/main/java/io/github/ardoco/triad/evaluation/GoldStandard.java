@@ -1,7 +1,5 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.evaluation;
-
-import edu.stanford.nlp.util.IdentityHashSet;
-import io.github.ardoco.triad.ir.SingleLink;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,6 +10,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import edu.stanford.nlp.util.IdentityHashSet;
+
+import io.github.ardoco.triad.ir.SingleLink;
 
 public class GoldStandard {
     private final Map<String, Set<String>> links = new HashMap<>();
@@ -36,20 +38,18 @@ public class GoldStandard {
     private void loadLinks(Path file) throws IOException {
         try (Stream<String> lines = Files.lines(file)) {
             lines.map(String::trim)
-                 .filter(line -> !line.isEmpty())
-                 .filter(line -> !line.startsWith("#"))
-                 .forEach(line -> {
-                     // Accept either "SRC TGT" (any whitespace) or "SRC,TGT"
-                     String[] parts = line.contains(",")
-                             ? line.split("\\s*,\\s*")
-                             : line.split("\\s+");
+                    .filter(line -> !line.isEmpty())
+                    .filter(line -> !line.startsWith("#"))
+                    .forEach(line -> {
+                        // Accept either "SRC TGT" (any whitespace) or "SRC,TGT"
+                        String[] parts = line.contains(",") ? line.split("\\s*,\\s*") : line.split("\\s+");
 
-                     if (parts.length >= 2) {
-                         String src = parts[0];
-                         String tgt = parts[1];
-                         links.computeIfAbsent(src, k -> new HashSet<>()).add(tgt);
-                     }
-                 });
+                        if (parts.length >= 2) {
+                            String src = parts[0];
+                            String tgt = parts[1];
+                            links.computeIfAbsent(src, k -> new HashSet<>()).add(tgt);
+                        }
+                    });
         }
     }
 

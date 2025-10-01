@@ -1,7 +1,5 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.text;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,6 +13,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A general-purpose text processing utility.
@@ -88,7 +89,7 @@ public class TextProcessor {
         String stopwordsRemoved2 = removeStopwords(stemmed);
         return lengthFilter(stopwordsRemoved2, 2).trim();
     }
-    
+
     /**
      * Performs general character cleaning, removing non-alphabetic characters
      * and handling common separators like hyphens.
@@ -96,7 +97,10 @@ public class TextProcessor {
     private static String cleanCharacters(String input) {
         // Replace hyphens with spaces to split words like "content-type"
         String hyphenAsSpace = input.replace("-", " ");
-        String cleaned = hyphenAsSpace.replaceAll("[^a-zA-Z]", " ").replaceAll("\\s+", " ").trim();
+        String cleaned = hyphenAsSpace
+                .replaceAll("[^a-zA-Z]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
         // Special handling for acronyms must happen before lowercasing.
         return cleaned.replaceAll("\\bUAVs\\b", "UAV");
     }
@@ -106,16 +110,15 @@ public class TextProcessor {
      */
     private static String splitCamelCase(String s) {
         String acronymProcessed = splitAcronyms(s);
-        return acronymProcessed.replaceAll(
-            String.format("%s|%s|%s",
-                "(?<=[A-Z])(?=[A-Z][a-z])",
-                "(?<=[^A-Z])(?=[A-Z])",
-                "(?<=[A-Za-z])(?=[^A-Za-z])"
-            ),
-            " "
-        ).replaceAll("  ", " ");
+        return acronymProcessed
+                .replaceAll(
+                        String.format(
+                                "%s|%s|%s",
+                                "(?<=[A-Z])(?=[A-Z][a-z])", "(?<=[^A-Z])(?=[A-Z])", "(?<=[A-Za-z])(?=[^A-Za-z])"),
+                        " ")
+                .replaceAll("  ", " ");
     }
-    
+
     /**
      * A helper method to correctly split pluralized acronyms (e.g., "UAVs" -> "UAV s").
      */
@@ -151,7 +154,7 @@ public class TextProcessor {
     private static String splitSnakeCase(String s) {
         return s.replace("_", " ");
     }
-    
+
     /**
      * Removes words shorter than a given minimum length.
      */
@@ -170,8 +173,8 @@ public class TextProcessor {
     private static String removeStopwords(String text) {
         if (STOPWORDS.isEmpty() || text == null || text.isBlank()) return text;
         return Arrays.stream(text.split("\\s+"))
-            .filter(w -> !STOPWORDS.contains(w))
-            .collect(Collectors.joining(" "));
+                .filter(w -> !STOPWORDS.contains(w))
+                .collect(Collectors.joining(" "));
     }
 
     /**
@@ -181,8 +184,6 @@ public class TextProcessor {
         if (text == null || text.isBlank()) {
             return "";
         }
-        return Arrays.stream(text.split("\\s+"))
-                .map(Stemmer::stem)
-                .collect(Collectors.joining(" "));
+        return Arrays.stream(text.split("\\s+")).map(Stemmer::stem).collect(Collectors.joining(" "));
     }
 }

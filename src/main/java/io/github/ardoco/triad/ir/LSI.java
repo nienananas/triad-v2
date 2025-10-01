@@ -1,11 +1,12 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.ir;
+
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
-
-import java.util.Collections;
-import java.util.List;
 
 public class LSI implements IRModel {
     private TermDocumentMatrix queries;
@@ -19,7 +20,9 @@ public class LSI implements IRModel {
         bothSourceAndTarget.putAll(source);
         bothSourceAndTarget.putAll(target);
 
-        return Compute(new TermDocumentMatrix(source), new TermDocumentMatrix(target),
+        return Compute(
+                new TermDocumentMatrix(source),
+                new TermDocumentMatrix(target),
                 new TermDocumentMatrix(bothSourceAndTarget));
     }
 
@@ -55,7 +58,8 @@ public class LSI implements IRModel {
         return MatrixUtils.createRealMatrix(dates);
     }
 
-    private TermDocumentMatrix convertRealMatrixToTermDocumentMatrix(RealMatrix rebuildMatrix, TermDocumentMatrix tfidf_origin) {
+    private TermDocumentMatrix convertRealMatrixToTermDocumentMatrix(
+            RealMatrix rebuildMatrix, TermDocumentMatrix tfidf_origin) {
         for (int i = 0; i < rebuildMatrix.getRowDimension(); i++) {
             for (int j = 0; j < rebuildMatrix.getColumnDimension(); j++) {
                 if (rebuildMatrix.getEntry(i, j) > 0.0) {
@@ -157,7 +161,10 @@ public class LSI implements IRModel {
                 }
                 double cross = Math.sqrt(asquared) * Math.sqrt(bsquared);
                 if (cross == 0.0) {
-                    links.add(new SingleLink(ids.getDocumentName(i).trim(), tfidf.getDocumentName(j).trim(), 0.0));
+                    links.add(new SingleLink(
+                            ids.getDocumentName(i).trim(),
+                            tfidf.getDocumentName(j).trim(),
+                            0.0));
                 } else {
                     links.add(new SingleLink(ids.getDocumentName(i), tfidf.getDocumentName(j), product / cross));
                 }
@@ -186,7 +193,6 @@ public class LSI implements IRModel {
     public TermDocumentMatrix getTermDocumentMatrixOfDocuments() {
         return documents;
     }
-
 }
 
 class SVD {

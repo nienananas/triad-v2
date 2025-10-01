@@ -1,3 +1,4 @@
+/* Licensed under MIT 2025. */
 package io.github.ardoco.triad.model;
 
 public class DesignDocumentArtifact extends Artifact {
