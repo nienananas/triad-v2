@@ -38,8 +38,6 @@ This design choice highlights a key aspect of academic traceability tools: they 
 
 The control flow is managed by a `ProjectEnum`. Selecting a project via this enum dynamically loads a corresponding project-specific class (e.g., `Dronology.java`, `EasyClinic.java`). Each of these classes implements a shared `Project` interface, which provides paths to the various artifacts and pre-computed data files for that specific project. This structure allows the main execution pipeline to remain generic while delegating the details of data location to concrete strategy classes.
 
-![Enum-based Project Selection](UML/presentation/enums.png)
-
 ### 3.2 Specialized Pre-processing Pipelines
 
 Crucially, the original implementation does not use a single, generalized pre-processing pipeline. Instead, each project has a dedicated pre-processing package (e.g., `experiment.preprocess.dronology`) containing Java classes written specifically to parse that project's unique artifact formats.
@@ -47,8 +45,6 @@ Crucially, the original implementation does not use a single, generalized pre-pr
 For example, the Dronology pre-processor has logic to identify and parse `[SUMMARY]` and `[DESCRIPTION]` tags, which are specific to its requirements files. In contrast, the EasyClinic processor knows how to parse its unique "Use Case" and "Class Card" text formats. This specialized approach ensures that the textual data fed into the core IR and TRIAD algorithms is of the highest possible quality, as it is tailored to the exact structure of the input.
 
 The diagram below illustrates the specialized pipeline for the Dronology dataset as an example. This tailored processing occurs for every project in the evaluation.
-
-![Specialized Pre-processing for Dronology](UML/presentation/dronology.png)
 
 This highly specialized architecture presents both a strength and a challenge. While it maximizes performance on the known datasets, it makes the system difficult to apply to new projects without significant custom development. This observation directly motivated the design of our re-implementation.
 
@@ -75,15 +71,15 @@ The following plots compare the precision-recall curves of this implementation a
 
 #### Dronology
 
-![Dronology Plots](plots/dronology_plots.jpg)
+![Dronology Plots](experiments/plots/dronology_plots.jpg)
 
 #### EasyClinic
 
-![EasyClinic Plots](plots/easyclinic_plots.jpg)
+![EasyClinic Plots](experiments/plots/easyclinic_plots.jpg)
 
 #### Warc
 
-![Warc Plots](plots/warc_plots.jpg)
+![Warc Plots](experiments/plots/warc_plots.jpg)
 
 ## 6. Conclusion
 
