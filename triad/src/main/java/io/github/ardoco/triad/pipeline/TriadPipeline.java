@@ -1,0 +1,180 @@
+/* Licensed under MIT 2025. */
+package io.github.ardoco.triad.pipeline;
+
+import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.github.ardoco.triad.ir.ArtifactsCollection;
+import io.github.ardoco.triad.ir.IRModel;
+import io.github.ardoco.triad.ir.IRUnion;
+import io.github.ardoco.triad.ir.SimilarityMatrix;
+import io.github.ardoco.triad.model.Project;
+
+public class TriadPipeline {
+    private static final Logger logger = LoggerFactory.getLogger(TriadPipeline.class);
+
+    private final Project project;
+    private final IRModel irModel;
+
+    /**
+     * Construct a TRIAD pipeline for a specific project and IR model.
+     *
+     * @param project the project providing artifacts and configuration
+     * @param irModel the IR model used to compute similarities (e.g., VSM)
+     */
+    public TriadPipeline(Project project, IRModel irModel) {
+        this.project = project;
+        this.irModel = irModel;
+    }
+
+    /**
+     * Execute the full TRIAD pipeline: IR-ONLY baseline, enrichment, fusion,
+     * and optional transitivity.
+     *
+     * @return fused similarity matrix after enrichment (and transitivity if enabled)
+     * @throws IOException if artifact loading fails
+     */
+    public SimilarityMatrix run() throws IOException {
+        logger.info(
+                "Starting TRIAD pipeline for project '{}' with IR model '{}'",
+                project.getName(),
+                irModel.getModelName());
+
+        ArtifactsCollection sourceCollection = new ArtifactsCollection(project.getSourceArtifacts());
+        ArtifactsCollection targetCollection = new ArtifactsCollection(project.getTargetArtifacts());
+        ArtifactsCollection intermediateCollection = new ArtifactsCollection(project.getIntermediateArtifacts());
+
+        SimilarityMatrix irOnlyBaseMatrix = irModel.Compute(sourceCollection, targetCollection);
+        logger.info("Computed IR-ONLY baseline matrix.");
+
+        // If there is no intermediate artifact set, run in TAROT-ONLY mode.
+        if (intermediateCollection.size() == 0) {
+            logger.info("No intermediate artifacts for project '{}': running TAROT-ONLY mode.", project.getName());
+
+            SimilarityMatrix unionSourceTargetSim = IRUnion.computeUnion(sourceCollection, targetCollection);
+            SimilarityMatrix unionTargetSourceSim = IRUnion.computeUnion(targetCollection, sourceCollection);
+
+            TarotOnlyEnrichment tarot =
+                    new TarotOnlyEnrichment(project, irModel, unionSourceTargetSim, unionTargetSourceSim);
+            SimilarityMatrix tarotSTMatrix = tarot.enrichAndFuse();
+
+            boolean guardFusion = Boolean.parseBoolean(System.getProperty("triad.fusion.guard", "false"));
+            String fusionStrategy = System.getProperty("triad.fusion.strategy", guardFusion ? "guarded_avg" : "avg");
+            SimilarityMatrix fusedMatrix =
+                    switch (fusionStrategy) {
+                        case "max" -> fuseConservativeMax(irOnlyBaseMatrix, tarotSTMatrix);
+                        case "guarded_avg" -> fuseAverageGuarded(irOnlyBaseMatrix, tarotSTMatrix);
+                        default -> fuseAverage(irOnlyBaseMatrix, tarotSTMatrix);
+                    };
+            logger.info("TAROT-ONLY pipeline finished.");
+            return fusedMatrix;
+        }
+
+        // Otherwise, run the full TRIAD pipeline.
+        logger.info("Computing union similarity matrices on original artifacts...");
+        SimilarityMatrix unionSourceIntermediateSim = IRUnion.computeUnion(sourceCollection, intermediateCollection);
+        SimilarityMatrix unionIntermediateTargetSim = IRUnion.computeUnion(intermediateCollection, targetCollection);
+        SimilarityMatrix unionTargetIntermediateSim = IRUnion.computeUnion(targetCollection, intermediateCollection);
+        SimilarityMatrix unionSourceSourceSim = IRUnion.computeUnion(sourceCollection, sourceCollection);
+        SimilarityMatrix unionIntermediateIntermediateSim =
+                IRUnion.computeUnion(intermediateCollection, intermediateCollection);
+        logger.info("Union matrices computed.");
+
+        logger.info("Starting enrichment phase...");
+        var enrichment = new Enrichment(
+                project, irModel, unionSourceIntermediateSim, unionIntermediateTargetSim, unionTargetIntermediateSim);
+        SimilarityMatrix tarotSTMatrix = enrichment.enrichAndFuse();
+        logger.info("Enrichment phase complete.");
+
+        boolean guardFusion = Boolean.parseBoolean(System.getProperty("triad.fusion.guard", "false"));
+        String fusionStrategy = System.getProperty("triad.fusion.strategy", guardFusion ? "guarded_avg" : "avg");
+        SimilarityMatrix fusedMatrix =
+                switch (fusionStrategy) {
+                    case "max" -> fuseConservativeMax(irOnlyBaseMatrix, tarotSTMatrix);
+                    case "guarded_avg" -> fuseAverageGuarded(irOnlyBaseMatrix, tarotSTMatrix);
+                    default -> fuseAverage(irOnlyBaseMatrix, tarotSTMatrix);
+                };
+        logger.info("Fused IR-ONLY baseline and enriched matrix.");
+
+        // Check if transitivity should be applied (can be disabled for testing)
+        boolean applyTransitivity = Boolean.parseBoolean(System.getProperty("triad.transitivity.enabled", "true"));
+
+        if (applyTransitivity) {
+            var transitivity = new Transitivity(
+                    unionSourceIntermediateSim,
+                    unionIntermediateTargetSim,
+                    unionSourceSourceSim,
+                    unionIntermediateIntermediateSim);
+            SimilarityMatrix finalMatrix = transitivity.applyTransitivity(fusedMatrix);
+            logger.info("TRIAD pipeline finished with transitivity.");
+            return finalMatrix;
+        } else {
+            logger.info("TRIAD pipeline finished without transitivity (disabled for testing).");
+            return fusedMatrix;
+        }
+    }
+
+    /**
+     * Execute the IR-ONLY baseline between sources and targets using the configured IR model.
+     *
+     * @return baseline similarity matrix
+     * @throws IOException if artifact loading fails
+     */
+    public SimilarityMatrix runIrOnly() throws IOException {
+        logger.info(
+                "Starting IR-ONLY pipeline for project '{}' with IR model '{}'",
+                project.getName(),
+                irModel.getModelName());
+        return irModel.Compute(
+                new ArtifactsCollection(project.getSourceArtifacts()),
+                new ArtifactsCollection(project.getTargetArtifacts()));
+    }
+
+    private static SimilarityMatrix fuseConservativeMax(SimilarityMatrix base, SimilarityMatrix enriched) {
+        SimilarityMatrix fused = base.deepCopy();
+        for (String s : base.getSourceArtifacts()) {
+            for (String t : base.getTargetArtifacts()) {
+                double baseScore = base.getScore(s, t);
+                double enrichedScore = enriched.getScore(s, t);
+                fused.setScore(s, t, Math.max(baseScore, enrichedScore));
+            }
+        }
+        return fused;
+    }
+
+    /**
+     * Average fusion, but guarded so that the fused score never falls below the base.
+     * Equivalent to max(base, 0.5*(base+enriched)). This preserves original TRIAD behavior
+     * while ensuring we don't degrade IR-ONLY links when enrichment is noisy.
+     */
+    private static SimilarityMatrix fuseAverageGuarded(SimilarityMatrix base, SimilarityMatrix enriched) {
+        SimilarityMatrix fused = base.deepCopy();
+        for (String s : base.getSourceArtifacts()) {
+            for (String t : base.getTargetArtifacts()) {
+                double b = base.getScore(s, t);
+                double e = enriched.getScore(s, t);
+                double avg = 0.5 * (b + e);
+                fused.setScore(s, t, Math.max(b, avg));
+            }
+        }
+        return fused;
+    }
+
+    /**
+     * Fuses two similarity matrices by averaging their scores, matching the original TRIAD implementation.
+     * This is the fusion strategy used in the original TRIAD paper: 0.5 * (score1 + score2).
+     */
+    private static SimilarityMatrix fuseAverage(SimilarityMatrix base, SimilarityMatrix enriched) {
+        SimilarityMatrix fused = base.deepCopy();
+        for (String s : base.getSourceArtifacts()) {
+            for (String t : base.getTargetArtifacts()) {
+                double baseScore = base.getScore(s, t);
+                double enrichedScore = enriched.getScore(s, t);
+                fused.setScore(s, t, 0.5 * (baseScore + enrichedScore));
+            }
+        }
+        return fused;
+    }
+}

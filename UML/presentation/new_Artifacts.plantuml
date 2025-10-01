@@ -1,0 +1,48 @@
+@startuml
+title New TRIAD: Handhabung von Artefakten
+
+abstract class Artifact {
+  # identifier: String
+  # textBody: String
+  # biterms: Set<Biterm>
+  + {abstract} getBiterms(): Set<Biterm>
+  + {abstract} getType(): ArtifactType
+}
+
+class JavaCodeArtifact extends Artifact {
+  + getBiterms(): Set<Biterm>
+}
+note bottom of JavaCodeArtifact
+  Nutzt **Tree-sitter** um
+  Java-Code zu analysieren.
+end note
+
+class CCodeArtifact extends Artifact {
+  + getBiterms(): Set<Biterm>
+}
+note bottom of CCodeArtifact
+  Nutzt **Tree-sitter** um
+  C-Code zu analysieren.
+end note
+
+class RequirementsDocumentArtifact extends Artifact {
+  + getBiterms(): Set<Biterm>
+}
+note bottom of RequirementsDocumentArtifact
+  Nutzt **Stanford NLP** um
+  Abhängigkeiten via Sprache 
+  zu extrahieren.
+end note
+
+class Project {
+ + getSourceArtifacts(): Set<Artifact>
+}
+
+class ArtifactFactory {
+  + {static} create(id, text, type): Artifact
+}
+
+Project -> ArtifactFactory : uses
+ArtifactFactory ..> Artifact : creates
+
+@enduml
