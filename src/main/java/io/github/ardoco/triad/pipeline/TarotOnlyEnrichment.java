@@ -38,7 +38,7 @@ public class TarotOnlyEnrichment {
     }
 
     /**
-     * Perform TAROT-only enrichment (SRC<->TGT neighbors) and fuse the results.
+     * Perform TAROT-only enrichment (directly between source and target neighbors) and fuse the results.
      *
      * @return element-wise average of enriched similarities in both directions
      * @throws IOException if artifact loading fails
