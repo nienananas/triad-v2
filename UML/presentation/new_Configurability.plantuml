@@ -1,0 +1,47 @@
+@startuml
+title New TRIAD: Konfiguration für allgemeine Projekte
+
+class App {
+  + main()
+}
+
+class Config {
+  - projects: List<ProjectConfig>
+}
+
+class ProjectConfig {
+  - name: String
+  - source: ArtifactConfig
+  - intermediate: ArtifactConfig
+  - target: ArtifactConfig
+  - goldStandardPath: String
+}
+
+class ArtifactConfig {
+  - path: String
+  - type: ArtifactType
+}
+
+enum ArtifactType {
+  TEXTUAL
+  JAVA_CODE
+  C_CODE
+}
+
+class Project {
+  + getSourceArtifacts(): Set<Artifact>
+  + getTargetArtifacts(): Set<Artifact>
+}
+
+class ArtifactFactory {
+  + {static} create(identifier, text, type): Artifact
+}
+
+App -> Config : reads
+Config "1" *-- "1..*" ProjectConfig
+ProjectConfig "1" *-- "2..3" ArtifactConfig
+ArtifactConfig "1" *-- "1" ArtifactType
+Project ..> ArtifactFactory : uses
+ArtifactFactory ..> ArtifactType : uses
+
+@enduml
