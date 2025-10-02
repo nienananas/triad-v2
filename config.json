@@ -1,0 +1,84 @@
+{
+    "projects": [
+      {
+        "name": "Warc",
+        "source": {
+          "path": "warc/NFR",
+          "type": "TEXTUAL"
+        },
+        "intermediate": {
+          "path": "warc/SRS",
+          "type": "TEXTUAL"
+        },
+        "target": {
+          "path": "warc/FRS",
+          "type": "TEXTUAL"
+        },
+        "goldStandardPath": "warc/gold_standard/NFR-FRS.txt"
+      },
+      {
+        "name": "Dronology",
+        "source": {
+          "path": "Dronology/Requirements",
+          "type": "TEXTUAL"
+        },
+        "intermediate": {
+          "path": "Dronology/Design",
+          "type": "TEXTUAL"
+        },
+        "target": {
+          "path": "Dronology/Code",
+          "type": "JAVA_CODE"
+        },
+        "goldStandardPath": "Dronology/gold_standard/req-code.txt"
+      },
+      {
+        "name": "LibEST",
+        "source": {
+          "path": "libest/requirements",
+          "type": "TEXTUAL"
+        },
+        "intermediate": {
+          "path": "libest/test",
+          "type": "C_CODE"
+        },
+        "target": {
+          "path": "libest/source_code",
+          "type": "C_CODE"
+        },
+        "goldStandardPath": "libest/gold_standard/req-code.txt"
+      },
+      {
+        "name": "Dronology-Original-Preproc",
+        "source": {
+          "path": "Dronology-Original-Preproc/req",
+          "type": "TEXTUAL"
+        },
+        "intermediate": {
+          "path": "Dronology-Original-Preproc/design_definition",
+          "type": "TEXTUAL"
+        },
+        "target": {
+          "path": "Dronology-Original-Preproc/code",
+          "type": "JAVA_CODE"
+        },
+        "goldStandardPath": "Dronology-Original-Preproc/gold_standard/req-code.txt"
+      },
+      {
+        "name": "EasyClinic",
+        "source": {
+          "path": "easyclinic/use_case",
+          "type": "TEXTUAL"
+        },
+        "intermediate": {
+          "path": "easyclinic/interaction_diagram",
+          "type": "TEXTUAL"
+        },
+        "target": {
+          "path": "easyclinic/code_description",
+          "type": "TEXTUAL"
+        },
+        "goldStandardPath": "easyclinic/gold_standard/uc-cc.txt"
+      }
+    ]
+  }
