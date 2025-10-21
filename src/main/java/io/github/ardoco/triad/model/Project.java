@@ -50,7 +50,7 @@ public class Project {
         if (artifactConfig == null) {
             return java.util.Collections.emptySet();
         }
-        Path root = Paths.get("dataset").resolve(artifactConfig.getPath());
+        Path root = Paths.get("experiments/datasets").resolve(artifactConfig.getPath());
 
         try (Stream<Path> files = Files.walk(root)) {
             return files.filter(Files::isRegularFile)
@@ -76,6 +76,6 @@ public class Project {
     }
 
     public Path getGoldStandardPath() {
-        return Paths.get("dataset/" + config.getGoldStandardPath());
+        return Paths.get("experiments/datasets/" + config.getGoldStandardPath());
     }
 }

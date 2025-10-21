@@ -60,7 +60,7 @@ public class App {
 
             GoldStandard goldStandard = new GoldStandard(project.getGoldStandardPath());
 
-            Path projectOutputDir = Paths.get("output", project.getName());
+            Path projectOutputDir = Paths.get("experiments/output", project.getName());
             Files.createDirectories(projectOutputDir);
 
             for (IRModel irModel : IR_MODELS_TO_RUN) {
