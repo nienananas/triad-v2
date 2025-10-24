@@ -1,4 +1,5 @@
 {
+    "doEvaluate": true,
     "projects": [
       {
         "name": "Warc",
@@ -47,22 +48,6 @@
           "type": "C_CODE"
         },
         "goldStandardPath": "libest/gold_standard/req-code.txt"
-      },
-      {
-        "name": "Dronology-Original-Preproc",
-        "source": {
-          "path": "Dronology-Original-Preproc/req",
-          "type": "TEXTUAL"
-        },
-        "intermediate": {
-          "path": "Dronology-Original-Preproc/design_definition",
-          "type": "TEXTUAL"
-        },
-        "target": {
-          "path": "Dronology-Original-Preproc/code",
-          "type": "JAVA_CODE"
-        },
-        "goldStandardPath": "Dronology-Original-Preproc/gold_standard/req-code.txt"
       },
       {
         "name": "EasyClinic",

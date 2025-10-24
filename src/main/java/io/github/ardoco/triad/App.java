@@ -19,8 +19,6 @@ import io.github.ardoco.triad.config.ProjectConfig;
 import io.github.ardoco.triad.evaluation.Evaluation;
 import io.github.ardoco.triad.evaluation.GoldStandard;
 import io.github.ardoco.triad.ir.IRModel;
-import io.github.ardoco.triad.ir.JSD;
-import io.github.ardoco.triad.ir.LSI;
 import io.github.ardoco.triad.ir.SimilarityMatrix;
 import io.github.ardoco.triad.ir.VSM;
 import io.github.ardoco.triad.model.PreprocessedProject;
@@ -30,7 +28,9 @@ import io.github.ardoco.triad.util.OutputLog;
 
 public class App {
     private static final Logger logger = LoggerFactory.getLogger(App.class);
-    private static final List<IRModel> IR_MODELS_TO_RUN = List.of(new VSM(), new LSI(), new JSD());
+    //private static final List<IRModel> IR_MODELS_TO_RUN = List.of(new VSM(), new LSI(), new JSD());
+    private static final List<IRModel> IR_MODELS_TO_RUN = List.of(new VSM());
+    private static final String OUTPUT_DIR = "experiments/output";
 
     /**
      * Entry point of the TRIAD application.
@@ -60,7 +60,7 @@ public class App {
 
             GoldStandard goldStandard = new GoldStandard(project.getGoldStandardPath());
 
-            Path projectOutputDir = Paths.get("experiments/output", project.getName());
+            Path projectOutputDir = Paths.get(OUTPUT_DIR, project.getName());
             Files.createDirectories(projectOutputDir);
 
             for (IRModel irModel : IR_MODELS_TO_RUN) {
@@ -70,14 +70,21 @@ public class App {
 
                 // Run IR-ONLY baseline
                 SimilarityMatrix irOnlyResults = pipeline.runIrOnly();
-                evaluateAndLog("IR-ONLY-" + irModel.getModelName(), irOnlyResults, goldStandard, project);
+                OutputLog.writeSimilarityMatrixToFile(OUTPUT_DIR + "/similarities/" + project.getName() + "_" + irModel.getModelName()+ ".csv", irOnlyResults);
+                if (config.getDoEvaluate()) {
+                    evaluateAndLog("IR-ONLY-" + irModel.getModelName(), irOnlyResults, goldStandard, project);
+                }
+
 
                 // Run full TRIAD pipeline
                 SimilarityMatrix triadResults = pipeline.run();
-                evaluateAndLog("TRIAD-" + irModel.getModelName(), triadResults, goldStandard, project);
+                if (config.getDoEvaluate()) {
+                    evaluateAndLog("TRIAD-" + irModel.getModelName(), triadResults, goldStandard, project);
+                }
+
 
                 // Perform statistical comparison
-                compareApproaches(irOnlyResults, triadResults, goldStandard, irModel.getModelName());
+                //compareApproaches(irOnlyResults, triadResults, goldStandard, irModel.getModelName());
             }
         }
     }
@@ -94,7 +101,7 @@ public class App {
         logger.info("F1-Score:  {}", String.format("%.4f", prf.f1()));
         logger.info("MAP:       {}", String.format("%.4f", map));
 
-        Path summaryPath = Paths.get("output", "evaluation_summary.csv");
+        Path summaryPath = Paths.get(OUTPUT_DIR, "evaluation_summary.csv");
         if (!Files.exists(summaryPath)) {
             Files.writeString(summaryPath, "Project,Approach,Precision,Recall,F1,MAP\n", StandardOpenOption.CREATE);
         }
@@ -106,7 +113,7 @@ public class App {
         // Calculate interpolated precision at 20 recall cutoffs (0.05, 0.10, ..., 1.00)
         List<Double> interpolatedPrecisions = Evaluation.getPrecisionAtRecallLevels(results, goldStandard, 20);
 
-        Path prCurvePath = Paths.get("output", project.getName(), "precision_recall_curves.csv");
+        Path prCurvePath = Paths.get(OUTPUT_DIR, project.getName(), "precision_recall_curves.csv");
 
         OutputLog.writePrecisionRecallCurveToFile(prCurvePath.toString(), approachName, interpolatedPrecisions);
         logger.info("Precision-Recall curve data for '{}' written to {}", approachName, prCurvePath);
