@@ -10,6 +10,14 @@ public class Config {
      */
     private boolean doEvaluate;
     /**
+     * The name of the IR method that should be used.
+     */
+    private String irMethod;
+    /**
+     * Boolean indicating if the triad method with the given IR method should be executed or only the IR method.
+     */
+    private boolean runTriad;
+    /**
      * Data specifying the projects on which the approach(es) should be executed.
      */
     private List<ProjectConfig> projects;
@@ -21,6 +29,23 @@ public class Config {
     public void setDoEvaluate(boolean doEvaluate) {
         this.doEvaluate = doEvaluate;
     }
+
+    public String getIrMethod() {
+        return irMethod;
+    }
+
+    public void setIrMethod(String irMethod) {
+        this.irMethod = irMethod;
+    }
+
+    public boolean getRunTriad() {
+        return runTriad;
+    }
+
+    public void getRunTriad(boolean runTriad) {
+        this.runTriad = runTriad;
+    }
+
 
     public List<ProjectConfig> getProjects() {
         return projects;

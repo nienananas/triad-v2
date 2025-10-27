@@ -1,5 +1,7 @@
 {
     "doEvaluate": true,
+    "irMethod": "VSM",
+    "runTriad": false,
     "projects": [
       {
         "name": "Warc",
