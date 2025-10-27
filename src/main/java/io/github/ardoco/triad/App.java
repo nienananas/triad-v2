@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 
+import io.github.ardoco.triad.ir.SingleLink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,12 +76,23 @@ public class App {
                     evaluateAndLog("IR-ONLY-" + irModel.getModelName(), irOnlyResults, goldStandard, project);
                 }
 
+                logger.info("Testing multiple thresholds");
+                for (double threshold = 0.1; threshold < 1.0; threshold += 0.1) {
+                    evaluateAndLogWithThreshold(irOnlyResults, goldStandard, threshold, irModel.getModelName(), project.getName());
+                }
 
+                logger.info("Testing top k");
+                for (int k = 1; k <= 5; k++) {
+                    evaluateAndLogTopKRetrieval(irOnlyResults, goldStandard, k, irModel.getModelName(), project.getName());
+                }
+
+                /*
                 // Run full TRIAD pipeline
                 SimilarityMatrix triadResults = pipeline.run();
                 if (config.getDoEvaluate()) {
                     evaluateAndLog("TRIAD-" + irModel.getModelName(), triadResults, goldStandard, project);
                 }
+                */
 
 
                 // Perform statistical comparison
@@ -89,10 +101,62 @@ public class App {
         }
     }
 
+    /**
+     *
+     * @param results
+     * @param goldStandard
+     * @param threshold
+     * @author ninananas
+     */
+    private static void evaluateAndLogWithThreshold(SimilarityMatrix results, GoldStandard goldStandard, double threshold, String approachName, String projectName) throws IOException {
+        List<SingleLink> links = results.getLinksAboveThreshold(threshold);
+        Evaluation.PRF prf = Evaluation.calculatePRF(links, goldStandard);
+        logger.info("Results for threshold {}:", threshold);
+        logger.info("Precision: {}", String.format("%.4f", prf.precision()));
+        logger.info("Recall:    {}", String.format("%.4f", prf.recall()));
+        logger.info("F1-Score:  {}", String.format("%.4f", prf.f1()));
+        logger.info("Amount: {}", links.size());
+
+        Path summaryPath = Paths.get(OUTPUT_DIR, approachName + "_evaluation_with_threshold.csv");
+        if (!Files.exists(summaryPath)) {
+            Files.writeString(summaryPath, "Approach,Project,Threshold,Precision,Recall,F1,Amount\n", StandardOpenOption.CREATE);
+        }
+        String summaryLog = String.format(
+                "%s,%s,%.4f,%.4f,%.4f,%.4f,%d%n",
+                approachName, projectName, threshold, prf.precision(), prf.recall(), prf.f1(), links.size());
+        Files.writeString(summaryPath, summaryLog, StandardOpenOption.APPEND);
+    }
+
+    /**
+     *
+     * @param results
+     * @param goldStandard
+     * @param k
+     * @author ninananas
+     */
+    private static void evaluateAndLogTopKRetrieval(SimilarityMatrix results, GoldStandard goldStandard, int k, String approachName, String projectName) throws IOException {
+        List<SingleLink> links = results.getTopKLinks(k);
+        Evaluation.PRF prf = Evaluation.calculatePRF(links, goldStandard);
+        logger.info("Results for Top {}:", k);
+        logger.info("Precision: {}", String.format("%.4f", prf.precision()));
+        logger.info("Recall:    {}", String.format("%.4f", prf.recall()));
+        logger.info("F1-Score:  {}", String.format("%.4f", prf.f1()));
+        logger.info("Amount: {}", links.size());
+
+        Path summaryPath = Paths.get(OUTPUT_DIR, approachName + "_evaluation_top_k.csv");
+        if (!Files.exists(summaryPath)) {
+            Files.writeString(summaryPath, "Approach,Project,Threshold,Precision,Recall,F1,Amount\n", StandardOpenOption.CREATE);
+        }
+        String summaryLog = String.format(
+                "%s,%s,%d,%.4f,%.4f,%.4f,%d%n",
+                approachName, projectName, k, prf.precision(), prf.recall(), prf.f1(), links.size());
+        Files.writeString(summaryPath, summaryLog, StandardOpenOption.APPEND);
+    }
+
     private static void evaluateAndLog(
             String approachName, SimilarityMatrix results, GoldStandard goldStandard, Project project)
             throws IOException {
-        Evaluation.PRF prf = Evaluation.calculatePRF(results, goldStandard);
+        Evaluation.PRF prf = Evaluation.calculatePRF(results.getAllLinks(), goldStandard);
         double map = Evaluation.calculateMAP(results, goldStandard);
 
         logger.info("Results for: {}", approachName);

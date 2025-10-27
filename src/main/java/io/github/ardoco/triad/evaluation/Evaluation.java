@@ -32,8 +32,8 @@ public class Evaluation {
      * @param goldStandard the gold standard for comparison.
      * @return a PRF record containing the calculated metrics.
      */
-    public static PRF calculatePRF(SimilarityMatrix results, GoldStandard goldStandard) {
-        Set<SingleLink> retrievedLinks = new IdentityHashSet<>(results.getAllLinks());
+    public static PRF calculatePRF(List<SingleLink> results, GoldStandard goldStandard) {
+        Set<SingleLink> retrievedLinks = new IdentityHashSet<>(results);
         Set<SingleLink> groundTruthLinks = new IdentityHashSet<>(goldStandard.getLinks());
 
         // Use the non-generic getInstance() method as required by the library version

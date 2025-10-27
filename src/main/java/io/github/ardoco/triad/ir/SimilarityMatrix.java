@@ -3,11 +3,13 @@ package io.github.ardoco.triad.ir;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class SimilarityMatrix {
     private Map<String, LinksList> matrix = new HashMap<>();
@@ -56,6 +58,48 @@ public class SimilarityMatrix {
         List<SingleLink> allLinks = new ArrayList<>();
         for (LinksList linksList : matrix.values()) {
             allLinks.addAll(linksList);
+        }
+        return allLinks;
+    }
+
+    /**
+     * Flatten and return all links above a certain threshold.
+     *
+     * @param threshold the threshold that determines which links are returned
+     * @author ninananas
+     */
+    public List<SingleLink> getLinksAboveThreshold(double threshold) {
+        return this.getAllLinks().stream().filter(link -> link.getScore() > threshold).collect(Collectors.toList());
+    }
+
+    /**
+     * Flatten and return all links below a certain threshold.
+     *
+     * @param threshold the threshold that determines which links are returned
+     * @author ninananas
+     */
+    public List<SingleLink> getLinksBelowThreshold(double threshold) {
+        return this.getAllLinks().stream().filter(link -> link.getScore() < threshold).collect(Collectors.toList());
+    }
+
+
+    /**
+     * Flatten and get the links with the top-k highest similarity score for each source artifact.
+     * If less than k links exist for a source artifact, all existing links for this artifact are returned.
+     *
+     * @param k the number of links that should be retrieved
+     * @author ninananas
+     */
+    public List<SingleLink> getTopKLinks(int k) {
+        List<SingleLink> allLinks = new ArrayList<>();
+        for (LinksList linksList : matrix.values()) {
+            linksList.sort(Comparator.comparingDouble(SingleLink::getScore));
+            int numLinks = linksList.size();
+            if (k >= numLinks) {
+                allLinks.addAll(linksList);
+            } else {
+                allLinks.addAll(linksList.subList(numLinks - k, numLinks));
+            }
         }
         return allLinks;
     }
