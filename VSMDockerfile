@@ -1,0 +1,9 @@
+FROM maven:3.9.11-eclipse-temurin-21 AS build
+
+WORKDIR /app
+
+COPY . .
+
+RUN ["mvn", "clean", "package"]
+
+RUN ["mvn", "org.codehaus.mojo:exec-maven-plugin:3.2.0:java", "-Dexec.mainClass=io.github.ardoco.triad.App", "-Dexec.args=./config.json"]
